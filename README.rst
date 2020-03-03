@@ -60,23 +60,7 @@ dependency::
 Steps to do after generating with cookiecutter
 ----------------------------------------------
 
-- Add a new project on https://github.com/nens/ with the same name. Set
-  visibility to "public" and do not generate a license or readme.
-
-  Note: "public" means "don't put customer data or sample data with real
-  persons' addresses on github"!
-
-- Follow the steps you then see (from "git init" to "git push origin master")
-  and your code will be online.
-
-- Go to
-  https://github.com/nens/batch-calculator/settings/collaboration
-  and add the teams with write access (you might have to ask someone with
-  admin rights to do it).
-
 - Update this readme. Use `.rst
   <http://www.sphinx-doc.org/en/stable/rest.html>`_ as the format.
-
-- Ask Reinout to configure travis and coveralls.
 
 - Remove this section as you've done it all :-)
