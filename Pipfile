@@ -4,7 +4,7 @@ verify_ssl = true
 
 [dev-packages]
 "flake8" = "*"
-"black" = "==18.9.b0"
+"black" = "==19.10.b0"
 "zest.releaser" = "*"
 "coveralls" = "*"
 
