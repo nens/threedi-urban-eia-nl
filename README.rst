@@ -27,7 +27,7 @@ only need to run this once::
 A virtualenv puts its commands in the ``bin`` directory. So ``bin/pip``,
 ``bin/pytest``, etc. Set up the dependencies like this::
 
-  $ bin/pip -r requirements.txt
+  $ bin/pip install -r requirements.txt
 
 There will be a script you can run like this::
 
@@ -57,7 +57,7 @@ If you need a new dependency (like `requests`), add it in `setup.py` in
 `install_requires`. Afterwards, run pip again to actually install your
 dependency::
 
-  $ bin/pip -r requirements.txt
+  $ bin/pip install -r requirements.txt
 
 
 Steps to do after generating with cookiecutter
