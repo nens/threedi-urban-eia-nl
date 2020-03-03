@@ -15,7 +15,10 @@ node_modules/
 .DS_Store
 doc/build/
 ansible/*.retry
-.venv
+bin/
+lib/
+lib64
+pyvenv.cfg
 
 # Unit test / coverage reports
 .coverage

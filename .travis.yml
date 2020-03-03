@@ -1,13 +1,14 @@
 language: python
 python:
-  - 3.6
+  - 3.7
 install:
-  - pip install pipenv
-  - PIPENV_IGNORE_VIRTUALENVS=1 pipenv install --dev
+  - deactivate
+  - /opt/python/3.7/bin/python -m venv .
+  - bin/pip3 install -r requirements.txt
 script:
-  - pipenv run pytest
+  - bin/pytest
 after_success:
-  - pipenv run coveralls
+  - bin/coveralls
 
 # deploy:
 #   provider: pypi
