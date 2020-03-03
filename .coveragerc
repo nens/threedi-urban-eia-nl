@@ -1,0 +1,11 @@
+[run]
+source = batch_calculator
+
+[report]
+show_missing = true
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+"flake8" = "*"
+"black" = "==18.9.b0"
+"zest.releaser" = "*"
+"coveralls" = "*"
+
+[packages]
+"batch-calculator" = {path = ".", editable = true, extras=["test"]}
+
+[requires]
+python_version = "3"

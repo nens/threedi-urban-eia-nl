@@ -1,0 +1,21 @@
+language: python
+python:
+  - 3.6
+install:
+  - pip install pipenv
+  - PIPENV_IGNORE_VIRTUALENVS=1 pipenv install --dev
+script:
+  - pipenv run pytest
+after_success:
+  - pipenv run coveralls
+
+# deploy:
+#   provider: pypi
+#   user: "nens"
+#   password:
+#     secure: LongStringThatNeedsToBeSetByReinout
+#   # (travis encrypt NENS-PASSWORD --com --add deploy.password)
+#   on:
+#     tags: true
+#   distributions: "sdist bdist_wheel"
+#   skip_existing: true
