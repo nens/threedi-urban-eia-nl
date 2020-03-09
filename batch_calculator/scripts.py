@@ -3,7 +3,39 @@
 import argparse
 import logging
 
+from batch_calculator.read_rainfall_events import BuiReader
+from threedi_api_client import ThreediApiClient
+
 logger = logging.getLogger(__name__)
+
+
+def run_batch_calculator(**kwargs):
+
+    if kwargs.get("verbose"):
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
+
+    api_config = kwargs.get("api_config")
+
+    client = ThreediApiClient(api_config)
+
+    bui = BuiReader(kwargs["path"])
+    # print(bui.duration,bui.file)
+
+    # bui.parse_rain_timeseries()
+
+# Start simulation function
+def start_simulation(self, b):
+    with output:
+        my_sim = Simulation(
+            name=self.sim_name.value,
+            threedimodel=self._model_select.value,
+            organisation=self._organisation_select.value,
+            start_datetime=bui.start_datetime,
+            duration=bui.duration
+        )
 
 
 def get_parser():
@@ -17,30 +49,18 @@ def get_parser():
         default=False,
         help="Verbose output",
     )
-    # add arguments here
-    # parser.add_argument(
-    #     'path',
-    #     metavar='FILE',
-    # )
+    parser.add_argument("--api-config", default="")
+    parser.add_argument("path")
     return parser
 
 
 def main():
-    """ Call command with args from parser. """
-    options = get_parser().parse_args()
-    if options.verbose:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.INFO
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
-
+    """Execute main program with multiprocessing."""
     try:
-        print("Call some function from another file here")
-        # ^^^ TODO: pass in options.xyz where needed.
-    except:
-        logger.exception("An exception has occurred.")
-        return 1
+        return run_batch_calculator(**vars(get_parser().parse_args()))
+    except SystemExit:
+        raise
 
 
 if __name__ == "__main__":
-    exit(main())
+    main()

@@ -13,3 +13,5 @@ verify_ssl = true
 
 [requires]
 python_version = "3"
+h5py = "*" 
+jwt = "*"

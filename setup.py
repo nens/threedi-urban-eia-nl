@@ -4,7 +4,7 @@ version = "0.1.dev0"
 
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
 
-install_requires = []
+install_requires = ["h5py", "jwt"]
 
 tests_require = ["pytest", "mock", "pytest-cov", "pytest-flakes", "pytest-black"]
 
@@ -27,8 +27,6 @@ setup(
     tests_require=tests_require,
     extras_require={"test": tests_require},
     entry_points={
-        "console_scripts": [
-            "run-batch-calculator = batch_calculator.scripts:main"
-        ]
+        "console_scripts": ["run-batch-calculator = batch_calculator.scripts:main"]
     },
 )
