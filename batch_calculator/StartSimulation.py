@@ -50,6 +50,6 @@ class StartSimulation:
             progress = self._sim.simulations_progress_list(
                 self.created_sim_id, async_req=False
             )
-            # print(progress.percentage)
+
             print(progress.percentage, end="\r", flush=True)
             time.sleep(1.0)

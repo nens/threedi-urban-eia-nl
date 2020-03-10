@@ -39,8 +39,6 @@ class BuiReader:
         self.timestep = rain_data["values"][1][0] - rain_data["values"][0][0]
         self.duration = rain_data["values"][-1][0] + self.timestep
 
-        print(self.timestep, self.duration)
-
     #         # def find_duration(self) #waarom hier een functie definition?
     def parse_rain_timeseries(self):
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}

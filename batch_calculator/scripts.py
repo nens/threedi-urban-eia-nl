@@ -5,6 +5,7 @@ import logging
 
 from batch_calculator.read_rainfall_events import BuiReader
 from batch_calculator.StartSimulation import StartSimulation
+from batch_calculator.DownloadResults import DownloadResults
 from threedi_api_client import ThreediApiClient
 from openapi_client import SimulationsApi
 
@@ -25,19 +26,21 @@ def run_batch_calculator(**kwargs):
     api_config = kwargs.get("api_config")
 
     client = ThreediApiClient(api_config)
-    sim = SimulationsApi(client)
-    threedi_models = ThreedimodelsApi(client)
-    organisations = OrganisationsApi(client)
 
-    bui = BuiReader(kwargs["path"])
+    threedi_models = ThreedimodelsApi(client)
+    # organisations = OrganisationsApi(client)
+
+    bui = BuiReader(kwargs["rain_files_path"])
 
     model_id = threedi_models.threedimodels_read(12).id
     model_name = "v2_bergermeer"
-    org_id = (
-        organisations.organisations_list(name="Nelen & Schuurmans").results[0].unique_id
-    )
+    org_id = kwargs["org_id"]
 
-    start_sim = StartSimulation(client, model_id, model_name, org_id, bui)
+    sim = StartSimulation(client, model_id, model_name, org_id, bui)
+
+    results = DownloadResults(
+        client, sim.created_sim_id, sim.model_id, kwargs["results_dir"]
+    )
 
 
 def get_parser():
@@ -52,8 +55,9 @@ def get_parser():
         help="Verbose output",
     )
     parser.add_argument("--api-config", default="")
-    parser.add_argument("path")
-    parser.add_argument("org")
+    parser.add_argument("rain_files_path")
+    parser.add_argument("org_id")
+    parser.add_argument("results_dir")
     return parser
 
 
