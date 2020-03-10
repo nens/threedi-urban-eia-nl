@@ -35,7 +35,6 @@ class BuiReader:
         with open(filepath, "r") as f:
             self.rain_timeseries = f.read()
 
-        # class die gebruik maakt van eigen functie om eigen variabelen te bepalen okay?
         rain_data = self.parse_rain_timeseries()
         self.timestep = rain_data["values"][1][0] - rain_data["values"][0][0]
         self.duration = rain_data["values"][-1][0] + self.timestep
@@ -46,7 +45,9 @@ class BuiReader:
     def parse_rain_timeseries(self):
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
-            list(ast.literal_eval(item)) for item in self.rain_timeseries.split('\n') if item
+            list(ast.literal_eval(item))
+            for item in self.rain_timeseries.split("\n")
+            if item
         ]
 
         rain_data.update(values=timeseries)
