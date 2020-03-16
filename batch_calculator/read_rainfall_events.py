@@ -18,28 +18,17 @@ class BuiReader:
         self.start_datetime = self.start_date + "T" + self.start_time
 
         self.end_datetime = self.start_datetime
-        # with open(filepath, "r") as f:
-        #     for line in f:
-        #         float_list = [float(i) for i in line.split('\n')]
-        #         timeseries2 = [item.split('\n') for item in line]
-        #         print(int_list)
-
-        # with open(filepath, 'r') as f:
-        #     lines = (line.strip() for line in f if line)
-        #     x = [line for line in lines]
-        #     print(x)
-
-        # with open(filepath, "r") as f:
-        #     self.rain_timeseries = [line.strip() for line in f if line]
 
         with open(filepath, "r") as f:
             self.rain_timeseries = f.read()
 
-        rain_data = self.parse_rain_timeseries()
-        self.timestep = rain_data["values"][1][0] - rain_data["values"][0][0]
-        self.duration = rain_data["values"][-1][0] + self.timestep
+        self.rain_data = self.parse_rain_timeseries()
+        print(self.rain_data)
+        self.timestep = self.rain_data["values"][1][0] - self.rain_data["values"][0][0]
 
-    #         # def find_duration(self) #waarom hier een functie definition?
+        # Convert duration from mins to seconds
+        self.duration = int( ( self.rain_data["values"][-1][0] + self.timestep ) * 60 )
+
     def parse_rain_timeseries(self):
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
@@ -47,7 +36,14 @@ class BuiReader:
             for item in self.rain_timeseries.split("\n")
             if item
         ]
+        
+        # Convert from [mm/15min] to [m/s]
+        timeseries = [ [element[0], element[1] / (900 * 1000)] for element in timeseries]
+        # print(timeseries)
 
         rain_data.update(values=timeseries)
-        # print(rain_data)
         return rain_data
+
+    # def get_timeseries(self):
+
+    #     return timeseries
