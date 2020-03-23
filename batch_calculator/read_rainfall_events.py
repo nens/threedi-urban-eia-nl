@@ -1,4 +1,5 @@
 import ast
+import os
 
 from datetime import datetime
 
@@ -7,10 +8,16 @@ class BuiReader:
     def __init__(self, filepath):
         self.filepath = filepath
 
+        filename = os.path.basename(self.filepath)
+        self.start_date = "2020-01-01"
+        # if
+        # TODO filepath naar filename
+        # defaultwaarde
         # Try to read start_date from filename, otherwise set default start_date
         try:
             self.start_date = datetime.strftime(
-                datetime.strptime(self.filepath.split()[1], "%Y%m%d%H%M%S"), "%Y-%m-%d",
+                datetime.strptime(self.filepath.split()[-1], "%Y%m%d%H%M%S"),
+                "%Y-%m-%d",
             )
             print("start_date = " + str(self.start_date))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
@@ -21,7 +28,8 @@ class BuiReader:
         # Try to read start_time from filename, otherwise set default start_time
         try:
             self.start_time = datetime.strftime(
-                datetime.strptime(self.filepath.split()[1], "%Y%m%d%H%M%S"), "%H:%M:%S",
+                datetime.strptime(self.filepath.split()[-1], "%Y%m%d%H%M%S"),
+                "%H:%M:%S",
             )
             print("start_time = " + str(self.start_time))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
