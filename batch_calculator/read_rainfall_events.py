@@ -13,9 +13,10 @@ class BuiReader:
                 datetime.strptime(self.filepath.split()[1], "%Y%m%d%H%M%S"), "%Y-%m-%d",
             )
             print("start_date = " + str(self.start_date))
-        except:  # uitzoeken welke exception hier geraised moet worden
+        except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
+            print ("Error: ", e)
             self.start_date = "2020-01-01"
-            print("start_date = " + str(self.start_date))
+            print("Using default date => start_date = " + str(self.start_date))
 
         # Try to read start_time from filename, otherwise set default start_time
         try:
@@ -23,28 +24,31 @@ class BuiReader:
                 datetime.strptime(self.filepath.split()[1], "%Y%m%d%H%M%S"), "%H:%M:%S",
             )
             print("start_time = " + str(self.start_time))
-        except:  # uitzoeken welke exception hier geraised moet worden
+        except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
+            print ("Error: ", e)
             self.start_time = "00:00:00"
-            print("start_time = " + str(self.start_time))
+            print("Using default time => start_time = " + str(self.start_time))
 
         # Combine self.start_date and self.start_time
         self.start_datetime = self.start_date + "T" + self.start_time
 
-        # self.end_datetime = self.start_datetime
-
+        # Open the rain-file
         with open(filepath, "r") as f:
             self.rain_timeseries = f.read()
 
         self.rain_data = self.parse_rain_timeseries()
-        # print(self.rain_data)
-        self.last_timestep = (
-            self.rain_data["values"][-1][0] - self.rain_data["values"][-2][0]
-        )
 
-        # Convert duration from mins to seconds
-        self.duration = int((self.rain_data["values"][-1][0] + self.last_timestep) * 60)
+        # self.last_timestep = (
+        #     self.rain_data["values"][-1][0] - self.rain_data["values"][-2][0]
+        # )
 
+        # Set the duration of the simulation to be equal to the last timestamp value and change the value from minutes to seconds
+        self.duration = int(self.rain_data["values"][-1][0] * 60)
+
+    
     def parse_rain_timeseries(self):
+        # This function parses 3Di-format rain files into the format required by the 3Di API
+        
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
             list(ast.literal_eval(item))
@@ -57,9 +61,13 @@ class BuiReader:
             [element[0], element[1] / (15 * 60 * 1000)] for element in timeseries
         ]
 
-        # Raise error if the last rain intensity value is larger than 0
+        # Raise error if the first timestep in timeseries is not 0
+        if timeseries[0][0] != 0:
+            raise ValueError("First timestamp should be 0")
+
+        # Raise error if the last rain intensity value in timeseries is larger than 0
         if timeseries[-1][1] != 0:
-            raise ValueError("Last rain intensity value is larger than 0")
+            raise ValueError("Last rain intensity value should be 0")
 
         rain_data.update(values=timeseries)
         return rain_data

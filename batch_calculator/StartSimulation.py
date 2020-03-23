@@ -24,14 +24,6 @@ class StartSimulation:
         self.sim_name = model_name + "_" + self.start_datetime
         self.duration = duration
 
-        # Recommended way on stackoverflow
-        # if start_datetime is None:
-        #     start_datetime = bui.start_datetime
-        # self.start_datetime = start_datetime
-
-        # if duration is None:
-        #     duration = bui.duration # Wat als bui.duration ook niet bestaat? Default value?
-        # self.duration = duration
 
         my_sim = Simulation(
             name=self.sim_name,
@@ -47,11 +39,10 @@ class StartSimulation:
 
         print("curr_sim_id: " + self.sim_id_value)
 
-        # Create a rain timeseries (only when bui is not None)
-        if bui is not None:
-            self._sim.simulations_events_rain_timeseries_create(
-                self.created_sim_id, bui.rain_data
-            )
+        # Create a rain timeseries
+        self._sim.simulations_events_rain_timeseries_create(
+            self.created_sim_id, bui.rain_data
+        )
 
         # Create a timed save state at the end of the simulation duration
         # OP HET MOMENT WERKT DWF NOG NIET, DUS VOORLOPIG OVERSLAAN
@@ -63,7 +54,7 @@ class StartSimulation:
         #     },
         # )
 
-        # Start the simulation with id =  created_sim_id
+        # Start the simulation with id = created_sim_id
         sim_start = self._sim.simulations_actions_create(
             simulation_pk=self.created_sim_id, data={"name": "start"}
         )
@@ -82,13 +73,13 @@ class StartSimulation:
             self.created_sim_id, async_req=False
         )
 
-        print(progress.percentage)
-        while progress.percentage < 100:
-            progress = self._sim.simulations_progress_list(
-                self.created_sim_id, async_req=False
-            )
-            print(progress.percentage, end="\r", flush=True)
-            time.sleep(1.0)
+        # print(progress.percentage)
+        # while progress.percentage < 100:
+        #     progress = self._sim.simulations_progress_list(
+        #         self.created_sim_id, async_req=False
+        #     )
+        #     print(progress.percentage, end="\r", flush=True)
+        #     time.sleep(1.0)
 
         # Check saved state upload
         # self._sim.simulations_create_saved_states_timed_list(self.created_sim_id)
