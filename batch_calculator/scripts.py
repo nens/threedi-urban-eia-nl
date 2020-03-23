@@ -39,6 +39,7 @@ def run_batch_calculator(**kwargs):
 
     # sim = StartSimulation(client, model_id, model_name, org_id, bui)
 
+
     # results = DownloadResults(
     #     client, sim.created_sim_id, sim.model_id, kwargs["results_dir"]
     # )
