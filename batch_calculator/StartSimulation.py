@@ -24,7 +24,6 @@ class StartSimulation:
         self.sim_name = model_name + "_" + self.start_datetime
         self.duration = duration
 
-
         my_sim = Simulation(
             name=self.sim_name,
             threedimodel=self.model_id,
@@ -55,7 +54,7 @@ class StartSimulation:
         # )
 
         # Start the simulation with id = created_sim_id
-        sim_start = self._sim.simulations_actions_create(
+        self._sim.simulations_actions_create(  # TODO sim_start =
             simulation_pk=self.created_sim_id, data={"name": "start"}
         )
 
@@ -69,7 +68,7 @@ class StartSimulation:
             time.sleep(5.0)
         print(status.name)
 
-        progress = self._sim.simulations_progress_list(
+        self._sim.simulations_progress_list(  # TODO progress =
             self.created_sim_id, async_req=False
         )
 

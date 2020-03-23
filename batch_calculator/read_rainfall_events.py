@@ -14,7 +14,7 @@ class BuiReader:
             )
             print("start_date = " + str(self.start_date))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
-            print ("Error: ", e)
+            print("Error: ", e)
             self.start_date = "2020-01-01"
             print("Using default date => start_date = " + str(self.start_date))
 
@@ -25,7 +25,7 @@ class BuiReader:
             )
             print("start_time = " + str(self.start_time))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
-            print ("Error: ", e)
+            print("Error: ", e)
             self.start_time = "00:00:00"
             print("Using default time => start_time = " + str(self.start_time))
 
@@ -45,10 +45,9 @@ class BuiReader:
         # Set the duration of the simulation to be equal to the last timestamp value and change the value from minutes to seconds
         self.duration = int(self.rain_data["values"][-1][0] * 60)
 
-    
     def parse_rain_timeseries(self):
         # This function parses 3Di-format rain files into the format required by the 3Di API
-        
+
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
             list(ast.literal_eval(item))
