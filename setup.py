@@ -6,7 +6,7 @@ long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").r
 
 install_requires = ["h5py", "jwt"]
 
-tests_require = ["pytest", "mock", "pytest-cov", "pytest-flakes", "pytest-black"]
+tests_require = ["pytest", "mock", "pytest-cov", "pytest-flakes", "pytest-black", "openapi-client"]
 
 setup(
     name="batch-calculator",
