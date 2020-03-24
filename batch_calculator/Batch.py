@@ -52,6 +52,6 @@ class Batch:
                 start_datetime=bui.start_datetime,
             )
 
-            results = DownloadResults(
+            DownloadResults(  # results =
                 self._client, sim.created_sim_id, sim.model_id, self.results_dir
             )

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Tests for script.py"""
+import os
 import mock
 
 from batch_calculator import scripts
 
-
+# Relative path van maken
 @mock.patch(
     "sys.argv",
     [

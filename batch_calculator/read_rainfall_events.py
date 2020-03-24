@@ -8,33 +8,36 @@ class BuiReader:
     def __init__(self, filepath):
         self.filepath = filepath
 
-        filename = os.path.basename(self.filepath)
+        self.filename = os.path.basename(self.filepath)
+
+        # Default start_date
         self.start_date = "2020-01-01"
+
         # if
-        # TODO filepath naar filename
-        # defaultwaarde
-        # Try to read start_date from filename, otherwise set default start_date
+
+        # Try to read and set start_date from self.filename
         try:
             self.start_date = datetime.strftime(
-                datetime.strptime(self.filepath.split()[-1], "%Y%m%d%H%M%S"),
+                datetime.strptime(self.filename.split()[-1], "%Y%m%d%H%M%S"),
                 "%Y-%m-%d",
             )
             print("start_date = " + str(self.start_date))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
             print("Error: ", e)
-            self.start_date = "2020-01-01"
             print("Using default date => start_date = " + str(self.start_date))
+
+        # Default start_time
+        self.start_time = "00:00:00"
 
         # Try to read start_time from filename, otherwise set default start_time
         try:
             self.start_time = datetime.strftime(
-                datetime.strptime(self.filepath.split()[-1], "%Y%m%d%H%M%S"),
+                datetime.strptime(self.filename.split()[-1], "%Y%m%d%H%M%S"),
                 "%H:%M:%S",
             )
             print("start_time = " + str(self.start_time))
         except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
             print("Error: ", e)
-            self.start_time = "00:00:00"
             print("Using default time => start_time = " + str(self.start_time))
 
         # Combine self.start_date and self.start_time
