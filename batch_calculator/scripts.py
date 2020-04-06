@@ -55,6 +55,7 @@ def run_batch_calculator(**kwargs):
     )
 
 
+
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)

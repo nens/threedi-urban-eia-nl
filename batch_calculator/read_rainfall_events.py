@@ -7,13 +7,10 @@ from datetime import datetime
 class BuiReader:
     def __init__(self, filepath):
         self.filepath = filepath
-
         self.filename = os.path.basename(self.filepath)
 
         # Default start_date
         self.start_date = "2020-01-01"
-
-        # if
 
         # Try to read and set start_date from self.filename
         try:
@@ -22,7 +19,7 @@ class BuiReader:
                 "%Y-%m-%d",
             )
             print("start_date = " + str(self.start_date))
-        except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
+        except ValueError as e:
             print("Error: ", e)
             print("Using default date => start_date = " + str(self.start_date))
 
@@ -36,7 +33,7 @@ class BuiReader:
                 "%H:%M:%S",
             )
             print("start_time = " + str(self.start_time))
-        except ValueError as e:  # uitzoeken welke exception hier geraised moet worden
+        except ValueError as e:
             print("Error: ", e)
             print("Using default time => start_time = " + str(self.start_time))
 
@@ -48,10 +45,6 @@ class BuiReader:
             self.rain_timeseries = f.read()
 
         self.rain_data = self.parse_rain_timeseries()
-
-        # self.last_timestep = (
-        #     self.rain_data["values"][-1][0] - self.rain_data["values"][-2][0]
-        # )
 
         # Set the duration of the simulation to be equal to the last timestamp value and change the value from minutes to seconds
         self.duration = int(self.rain_data["values"][-1][0] * 60)
@@ -66,11 +59,6 @@ class BuiReader:
             if item
         ]
 
-        # Convert from [mm/15min] to [m/s] (TODO: change so that it works for all timesteps)
-        timeseries = [
-            [element[0], element[1] / (15 * 60 * 1000)] for element in timeseries
-        ]
-
         # Raise error if the first timestep in timeseries is not 0
         if timeseries[0][0] != 0:
             raise ValueError("First timestamp should be 0")
@@ -79,7 +67,18 @@ class BuiReader:
         if timeseries[-1][1] != 0:
             raise ValueError("Last rain intensity value should be 0")
 
-        rain_data.update(values=timeseries)
+        # Calculate the timesteps from the list of timestamps in timeseries
+        timesteps = [timeseries[i[0]+1][0] - timeseries[i[0]][0] for i in enumerate(timeseries[0:-1])]
+
+        # Convert from [mm/timestep] to [m/s]
+        timeseries_conv = [
+            [element[0], element[1] / (timesteps[i] * 60 * 1000)] for i, element in enumerate(timeseries[0:-1])
+        ]
+
+        # Append the last element of timeseries to timeseries_conv
+        timeseries_conv.append(timeseries[-1])
+
+        rain_data.update(values=timeseries_conv)
         return rain_data
 
     # def get_timeseries(self):

@@ -82,3 +82,5 @@ class StartSimulation:
 
         # Check saved state upload
         # self._sim.simulations_create_saved_states_timed_list(self.created_sim_id)
+
+        #TODO met bedrijf delen, en testen
