@@ -71,14 +71,17 @@ class StartSimulation:
         self._sim.simulations_progress_list(  # TODO progress =
             self.created_sim_id, async_req=False
         )
-
-        # print(progress.percentage)
-        # while progress.percentage < 100:
-        #     progress = self._sim.simulations_progress_list(
-        #         self.created_sim_id, async_req=False
-        #     )
-        #     print(progress.percentage, end="\r", flush=True)
-        #     time.sleep(1.0)
+        
+        # Required, otherwise DownloadResults tries downloading while simulation is still running
+        # Sometimes gets stuck
+        progress = self._sim.simulations_progress_list(self.created_sim_id, async_req=False)
+        print(progress.percentage)
+        while progress.percentage < 100:
+            progress = self._sim.simulations_progress_list(
+                self.created_sim_id, async_req=False
+            )
+            print(progress.percentage, end="\r", flush=True)
+            time.sleep(1.0)
 
         # Check saved state upload
         # self._sim.simulations_create_saved_states_timed_list(self.created_sim_id)
