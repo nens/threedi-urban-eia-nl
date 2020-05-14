@@ -52,9 +52,8 @@ def run_batch_calculator(**kwargs):
         model_id,
         model_name,
         org_id,
-        kwargs.get("results_dir")
+        kwargs.get("results_dir"),
     )
-
 
 
 def get_parser():
