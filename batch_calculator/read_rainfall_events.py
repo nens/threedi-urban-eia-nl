@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 
-class BuiReader:
+class RainEventReader:
     def __init__(self, filepath):
         self.filepath = filepath
         self.filename = os.path.basename(self.filepath)
@@ -68,11 +68,15 @@ class BuiReader:
             raise ValueError("Last rain intensity value should be 0")
 
         # Calculate the timesteps from the list of timestamps in timeseries
-        timesteps = [timeseries[i[0]+1][0] - timeseries[i[0]][0] for i in enumerate(timeseries[0:-1])]
+        timesteps = [
+            timeseries[i[0] + 1][0] - timeseries[i[0]][0]
+            for i in enumerate(timeseries[0:-1])
+        ]
 
         # Convert from [mm/timestep] to [m/s]
         timeseries_conv = [
-            [element[0], element[1] / (timesteps[i] * 60 * 1000)] for i, element in enumerate(timeseries[0:-1])
+            [element[0], element[1] / (timesteps[i] * 60 * 1000)]
+            for i, element in enumerate(timeseries[0:-1])
         ]
 
         # Append the last element of timeseries to timeseries_conv

@@ -1,6 +1,6 @@
 import os
 
-from batch_calculator.read_rainfall_events import BuiReader
+from batch_calculator.read_rainfall_events import RainEventReader
 from batch_calculator.StartSimulation import StartSimulation
 from batch_calculator.DownloadResults import DownloadResults
 
@@ -20,7 +20,7 @@ class Batch:
         for filename in os.listdir(self.rain_files_dir):
             rain_file_path = os.path.join(self.rain_files_dir, filename)
 
-            bui = BuiReader(rain_file_path)
+            rain_event = RainEventReader(rain_file_path)
 
             # bui.get_timeseries()
 
@@ -29,11 +29,11 @@ class Batch:
                 self.model_id,
                 self.model_name,
                 self.org_id,
-                bui.duration,
-                bui,
-                start_datetime=bui.start_datetime,
+                rain_event.duration,
+                rain_event,
+                start_datetime=rain_event.start_datetime,
             )
 
-            DownloadResults(  # results =
+            DownloadResults(
                 self._client, sim.created_sim_id, sim.model_id, self.results_dir
             )
