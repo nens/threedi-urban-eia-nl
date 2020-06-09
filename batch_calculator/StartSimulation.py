@@ -13,6 +13,7 @@ class StartSimulation:
         organisation_id,
         duration,
         rain_event,
+        saved_state_url=None,
         start_datetime="2020-01-01T00:00:00",
     ):
         self._client = client
@@ -20,6 +21,7 @@ class StartSimulation:
 
         self.model_id = model_id
         self.organisation_id = organisation_id
+        self.saved_state_url = saved_state_url
         self.start_datetime = start_datetime
         self.sim_name = model_name + "_" + self.start_datetime
         self.duration = duration
@@ -38,6 +40,14 @@ class StartSimulation:
 
         print("curr_sim_id: " + self.sim_id_value)
 
+        # Add initial saved state
+        self._sim.simulations_initial_saved_state_create(
+            self.created_sim_id,
+            {
+                "saved_state": self.saved_state_url
+            },
+        )
+
         # Create a rain timeseries
         self._sim.simulations_events_rain_timeseries_create(
             self.created_sim_id, rain_event.rain_data
@@ -49,7 +59,7 @@ class StartSimulation:
         #     self.created_sim_id,
         #     {
         #         "name": "saved_state_sim" + str(self.created_sim_id),
-        #         "time": bui.duration,
+        #         "time": rain_event.duration,
         #     },
         # )
 
@@ -86,6 +96,6 @@ class StartSimulation:
             time.sleep(1.0)
 
         # Check saved state upload
-        # self._sim.simulations_create_saved_states_timed_list(self.created_sim_id)
+        # print(self._sim.simulations_create_saved_states_timed_list(self.created_sim_id))
 
         # TODO met bedrijf delen, en testen

@@ -39,7 +39,9 @@ def run_batch_calculator(**kwargs):
     model_id = threedi_models.threedimodels_read(20).id
     model_name = threedi_models.threedimodels_read(20).repository_slug
     org_id = kwargs["org_id"]
+    saved_state_url = kwargs["saved_state_url"]
 
+    print(saved_state_url)
     # sim = StartSimulation(client, model_id, model_name, org_id, bui)
 
     # results = DownloadResults(
@@ -53,6 +55,7 @@ def run_batch_calculator(**kwargs):
         model_name,
         org_id,
         kwargs.get("results_dir"),
+        kwargs.get("saved_state_url"),
     )
 
 
@@ -71,6 +74,7 @@ def get_parser():
     parser.add_argument("rain_files_dir")
     parser.add_argument("org_id")
     parser.add_argument("results_dir")
+    parser.add_argument("--saved_state_url")
     return parser
 
 
