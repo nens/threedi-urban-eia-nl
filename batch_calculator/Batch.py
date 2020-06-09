@@ -7,7 +7,14 @@ from batch_calculator.DownloadResults import DownloadResults
 
 class Batch:
     def __init__(
-        self, rain_files_dir, client, model_id, model_name, org_id, results_dir, saved_state_url=None,
+        self,
+        rain_files_dir,
+        client,
+        model_id,
+        model_name,
+        org_id,
+        results_dir,
+        saved_state_url=None,
     ):
         self._client = client
 

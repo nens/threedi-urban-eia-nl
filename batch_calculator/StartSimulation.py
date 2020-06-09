@@ -42,10 +42,7 @@ class StartSimulation:
 
         # Add initial saved state
         self._sim.simulations_initial_saved_state_create(
-            self.created_sim_id,
-            {
-                "saved_state": self.saved_state_url
-            },
+            self.created_sim_id, {"saved_state": self.saved_state_url},
         )
 
         # Create a rain timeseries
