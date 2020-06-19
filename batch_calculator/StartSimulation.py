@@ -41,9 +41,9 @@ class StartSimulation:
         print("curr_sim_id: " + self.sim_id_value)
 
         # Add initial saved state
-        self._sim.simulations_initial_saved_state_create(
-            self.created_sim_id, {"saved_state": self.saved_state_url},
-        )
+        # self._sim.simulations_initial_saved_state_create(
+        #     self.created_sim_id, {"saved_state": self.saved_state_url},
+        # )
 
         # Create a rain timeseries
         self._sim.simulations_events_rain_timeseries_create(
@@ -52,13 +52,21 @@ class StartSimulation:
 
         # Create a timed save state at the end of the simulation duration
         # OP HET MOMENT WERKT DWF NOG NIET, DUS VOORLOPIG OVERSLAAN
-        # self._sim.simulations_create_saved_states_timed_create(
-        #     self.created_sim_id,
-        #     {
-        #         "name": "saved_state_sim" + str(self.created_sim_id),
-        #         "time": rain_event.duration,
-        #     },
-        # )
+        self._sim.simulations_create_saved_states_timed_create(
+            self.created_sim_id,
+            {
+                "name": "saved_state_sim" + str(self.created_sim_id),
+                "time": rain_event.duration,
+            },
+        )
+
+        # Add global 2D waterlevel
+        self._sim.simulations_initial2d_water_level_constant_create(
+            self.created_sim_id,
+            {
+                "value": 5.1
+            },
+        )
 
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =

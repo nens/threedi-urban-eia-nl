@@ -49,6 +49,8 @@ class RainEventReader:
         # Set the duration of the simulation to be equal to the last timestamp value and change the value from minutes to seconds
         self.duration = int(self.rain_data["values"][-1][0] * 60)
 
+        print(self.rain_data)
+
     def parse_rain_timeseries(self):
         # This function parses 3Di-format rain files into the format required by the 3Di API
 
@@ -75,7 +77,7 @@ class RainEventReader:
 
         # Convert from [mm/timestep] to [m/s]
         timeseries_conv = [
-            [element[0], element[1] / (timesteps[i] * 60 * 1000)]
+            [element[0], element[1] / (timesteps[i] * 1000)] # removed 60 behind timesteps[i], since it seems like it is [m/min]
             for i, element in enumerate(timeseries[0:-1])
         ]
 
