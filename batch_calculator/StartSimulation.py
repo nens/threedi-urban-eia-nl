@@ -68,6 +68,14 @@ class StartSimulation:
             },
         )
 
+        # Add the 1D waterlevels that have been specified in v2_connection_nodes
+        self._sim.simulations_initial1d_water_level_predefined_create(
+            self.created_sim_id,
+            {
+
+            },
+        )
+        
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =
             simulation_pk=self.created_sim_id, data={"name": "start"}
