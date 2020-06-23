@@ -48,6 +48,8 @@ class Batch:
                 start_datetime=rain_event.start_datetime,
             )
 
-            DownloadResults(
+            results = DownloadResults(
                 self._client, sim.created_sim_id, sim.model_id, self.results_dir
             )
+
+        self.agg_dir = results.agg_dir

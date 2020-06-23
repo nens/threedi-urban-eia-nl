@@ -8,6 +8,7 @@ import logging
 # from batch_calculator.StartSimulation import StartSimulation
 # from batch_calculator.DownloadResults import DownloadResults
 from batch_calculator.Batch import Batch
+from batch_calculator.DownloadResults import DownloadResults
 from threedi_api_client import ThreediApiClient
 
 # from openapi_client import SimulationsApi
@@ -33,7 +34,7 @@ def run_batch_calculator(**kwargs):
 
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
 
-    Batch(  # TODO batch =
+    batch = Batch(  # TODO batch =
         kwargs.get("rain_files_dir"),
         client,
         kwargs.get("model_id"),
@@ -43,6 +44,8 @@ def run_batch_calculator(**kwargs):
         kwargs.get("results_dir"),
         kwargs.get("saved_state_url"),
     )
+
+    print(batch.agg_dir)
 
 
 def get_parser():
@@ -63,6 +66,12 @@ def get_parser():
     parser.add_argument("ini_2d_water_level")
     parser.add_argument("results_dir")
     parser.add_argument("--saved_state_url")
+    parser.add_argument(
+        "nr_years",
+        default=10,
+        metavar="NR_YEARS",
+        help="Amount of years the statistics are based on",
+    )
     return parser
 
 
