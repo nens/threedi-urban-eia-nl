@@ -45,8 +45,13 @@ def run_batch_calculator(**kwargs):
         kwargs.get("saved_state_url"),
     )
 
-    print(batch.agg_dir)
+    nc_dir = batch.agg_dir
+    gridadmin = batch.agg_dir + "/" + "gridadmin.h5"
+    nr_years = kwargs["nr_years"]
 
+    print(nc_dir)
+    print(gridadmin)
+    print(nr_years)
 
 def get_parser():
     """ Return argument parser. """
