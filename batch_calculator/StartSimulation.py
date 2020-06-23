@@ -13,6 +13,7 @@ class StartSimulation:
         organisation_id,
         duration,
         rain_event,
+        water_level_2d,
         saved_state_url=None,
         start_datetime="2020-01-01T00:00:00",
     ):
@@ -25,6 +26,7 @@ class StartSimulation:
         self.start_datetime = start_datetime
         self.sim_name = model_name + "_" + self.start_datetime
         self.duration = duration
+        self.water_level_2d = water_level_2d
 
         my_sim = Simulation(
             name=self.sim_name,
@@ -64,7 +66,7 @@ class StartSimulation:
         self._sim.simulations_initial2d_water_level_constant_create(
             self.created_sim_id,
             {
-                "value": 5.1
+                "value": self.water_level_2d
             },
         )
 

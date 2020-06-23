@@ -13,6 +13,7 @@ class Batch:
         model_id,
         model_name,
         org_id,
+        ini_2d_water_level,
         results_dir,
         saved_state_url=None,
     ):
@@ -22,6 +23,7 @@ class Batch:
         self.model_id = model_id
         self.model_name = model_name
         self.org_id = org_id
+        self.ini_2d_water_level = ini_2d_water_level
         self.results_dir = results_dir
         self.saved_state_url = saved_state_url
 
@@ -39,6 +41,7 @@ class Batch:
                 self.org_id,
                 rain_event.duration,
                 rain_event,
+                self.ini_2d_water_level,
                 self.saved_state_url,
                 start_datetime=rain_event.start_datetime,
             )

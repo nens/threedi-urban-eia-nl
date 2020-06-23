@@ -52,6 +52,7 @@ def run_batch_calculator(**kwargs):
         kwargs.get("model_id"),
         model_name,
         kwargs.get("org_id"),
+        kwargs.get("ini_2d_water_level"),
         kwargs.get("results_dir"),
         kwargs.get("saved_state_url"),
     )
@@ -72,6 +73,7 @@ def get_parser():
     parser.add_argument("org_id", default="61f5a464c35044c19bc7d4b42d7f58cb")
     parser.add_argument("model_id")
     parser.add_argument("rain_files_dir")
+    parser.add_argument("ini_2d_water_level")
     parser.add_argument("results_dir")
     parser.add_argument("--saved_state_url")
     return parser
