@@ -28,23 +28,10 @@ def run_batch_calculator(**kwargs):
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
     api_config = kwargs.get("api_config")
-
     client = ThreediApiClient(api_config)
-
     threedi_models = ThreedimodelsApi(client)
-    # organisations = OrganisationsApi(client)
 
-    # bui = BuiReader(kwargs["rain_files_dir"])
-    # print(kwargs["model_id"])
-    # model_id = threedi_models.threedimodels_read(20).id
-    # print(model_id)
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
-
-    # sim = StartSimulation(client, model_id, model_name, org_id, bui)
-
-    # results = DownloadResults(
-    #     client, sim.created_sim_id, sim.model_id, kwargs["results_dir"]
-    # )
 
     Batch(  # TODO batch =
         kwargs.get("rain_files_dir"),
