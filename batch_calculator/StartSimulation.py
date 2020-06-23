@@ -64,20 +64,14 @@ class StartSimulation:
 
         # Add global 2D waterlevel
         self._sim.simulations_initial2d_water_level_constant_create(
-            self.created_sim_id,
-            {
-                "value": self.water_level_2d
-            },
+            self.created_sim_id, {"value": self.water_level_2d},
         )
 
         # Add the 1D waterlevels that have been specified in v2_connection_nodes
         self._sim.simulations_initial1d_water_level_predefined_create(
-            self.created_sim_id,
-            {
-
-            },
+            self.created_sim_id, {},
         )
-        
+
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =
             simulation_pk=self.created_sim_id, data={"name": "start"}
