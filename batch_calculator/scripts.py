@@ -53,6 +53,7 @@ def run_batch_calculator(**kwargs):
     print(gridadmin)
     print(nr_years)
 
+
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)
@@ -65,7 +66,7 @@ def get_parser():
         help="Verbose output",
     )
     parser.add_argument("--api-config", default=os.path.abspath(".env"))
-    parser.add_argument("org_id", default="61f5a464c35044c19bc7d4b42d7f58cb")
+    parser.add_argument("--org_id", default="61f5a464c35044c19bc7d4b42d7f58cb")
     parser.add_argument("model_id")
     parser.add_argument("rain_files_dir")
     parser.add_argument("ini_2d_water_level")
@@ -73,7 +74,7 @@ def get_parser():
     parser.add_argument("--saved_state_url")
     parser.add_argument(
         "nr_years",
-        default=10,
+        default="10",
         metavar="NR_YEARS",
         help="Amount of years the statistics are based on",
     )
