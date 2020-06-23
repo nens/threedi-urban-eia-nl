@@ -17,9 +17,13 @@ class DownloadResults:
 
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
         result_dir = self.output_dir + "/" + "simulation-" + str(self.sim_id)
+        agg_dir = self.output_dir + "/" + "aggregation_netcdfs"
 
         if not os.path.exists(result_dir):
             os.mkdir(result_dir)
+
+        if not os.path.exists(agg_dir):
+            os.mkdir(agg_dir)
 
         if not os.path.exists("gridadmin.h5"):
             gridadmin = self._threedi_models.threedimodels_gridadmin_download(
@@ -35,7 +39,7 @@ class DownloadResults:
             )
             if result.filename.startswith("agg"):
                 self.write_file_from_url(
-                    download.get_url, output_dir + "/" + self.append_id(result.filename)
+                    download.get_url, agg_dir + "/" + self.append_id(result.filename)
                 )
                 print("Downloaded: ", result.filename)
             else:
