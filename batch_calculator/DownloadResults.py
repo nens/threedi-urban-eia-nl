@@ -16,18 +16,22 @@ class DownloadResults:
         self.output_dir = output_dir
 
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
-        result_dir = self.output_dir + "/" + "simulation-" + str(self.sim_id)
-        os.mkdir(result_dir)
-        gridadmin = self._threedi_models.threedimodels_gridadmin_download(
-            self.model_id, async_req=False
-        )
-        self.write_file_from_url(gridadmin.get_url, result_dir + "/" + "gridadmin.h5")
+        result_dir = self.output_dir # + "/" + "simulation-" + str(self.sim_id)
+        if not os.path.exists(result_dir):
+            os.mkdir(result_dir)
+
+        if not os.path.exists("gridadmin.h5"):
+            gridadmin = self._threedi_models.threedimodels_gridadmin_download(
+                self.model_id, async_req=False
+            )
+            self.write_file_from_url(gridadmin.get_url, result_dir + "/" + "gridadmin.h5")
+            
         for result in sim_results:
             download = self._sims.simulations_results_files_download(
                 result.id, self.sim_id
             )
             self.write_file_from_url(
-                download.get_url, result_dir + "/" + result.filename
+                download.get_url, result_dir + "/" + self.append_id(result.filename) # + '_sim-' + str(self.sim_id)
             )
             print("Downloaded: ", result.filename)
 
@@ -36,3 +40,10 @@ class DownloadResults:
             file_data = requests.get(url)
             f.write(file_data.content)
         return
+
+    # def append_id(self, filename):
+    #     return "{0}_{2}{1}".format(*os.path.splitext(filename) + (str(self.sim_id),))
+
+    def append_id(self, filename):
+        name, ext = os.path.splitext(filename)
+        return "{name}_sim_{uid}{ext}".format(name=name, uid=str(self.sim_id), ext=ext)
