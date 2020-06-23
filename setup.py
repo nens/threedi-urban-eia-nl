@@ -4,7 +4,7 @@ version = "0.1.dev0"
 
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
 
-install_requires = ["h5py", "jwt"]
+install_requires = ["h5py", "jwt", "pandas"]
 
 tests_require = [
     "pytest",
