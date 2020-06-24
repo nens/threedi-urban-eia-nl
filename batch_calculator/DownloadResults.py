@@ -25,13 +25,14 @@ class DownloadResults:
         if not os.path.exists(self.agg_dir):
             os.mkdir(self.agg_dir)
 
-        if not os.path.exists("gridadmin.h5"):
+        if not os.path.exists(self.agg_dir + "/" + "gridadmin.h5"):
             gridadmin = self._threedi_models.threedimodels_gridadmin_download(
                 self.model_id, async_req=False
             )
             self.write_file_from_url(
                 gridadmin.get_url, self.agg_dir + "/" + "gridadmin.h5"
             )
+            print("Created new gridadmin.h5")
 
         for result in sim_results:
             download = self._sims.simulations_results_files_download(
