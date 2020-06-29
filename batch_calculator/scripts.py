@@ -107,14 +107,16 @@ def run_batch_calculator(**kwargs):
         ]
 
     output.to_csv(
-        os.path.join(os.path.dirname(__file__), "vuilemissie_statistieken.csv"),
+        os.path.join(kwargs["results_dir"], "vuilemissie_statistieken.csv"),
         index=False,
     )
 
 
 def get_parser():
     """ Return argument parser. """
-    parser = argparse.ArgumentParser(description=__doc__,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -123,10 +125,16 @@ def get_parser():
         default=False,
         help="Verbose output",
     )
-    parser.add_argument("--api-config", default=os.path.abspath(".env"),
-        help="Location of the .env file required for authentication")
-    parser.add_argument("--org_id", default="61f5a464c35044c19bc7d4b42d7f58cb",,
-        help="UUID of the organisation used for the 3Di calculation")
+    parser.add_argument(
+        "--api-config",
+        default=os.path.abspath(".env"),
+        help="Location of the .env file required for authentication",
+    )
+    parser.add_argument(
+        "--org_id",
+        default="61f5a464c35044c19bc7d4b42d7f58cb",
+        help="UUID of the organisation used for the 3Di calculation",
+    )
     parser.add_argument("model_id")
     parser.add_argument("rain_files_dir")
     parser.add_argument("ini_2d_water_level")
