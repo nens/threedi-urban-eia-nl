@@ -52,7 +52,7 @@ def run_batch_calculator(**kwargs):
 
     nc_dir = batch.agg_dir
     gridadmin = batch.agg_dir + "/" + "gridadmin.h5"
-    nr_years = kwargs["nr_years"]
+    nr_years = int(kwargs["nr_years"])
 
     ## Read gridadmin file
     nc_files = [file for file in os.listdir(nc_dir) if file.endswith(".nc")]
