@@ -161,7 +161,7 @@ def get_parser():
         help="The url of the saved state that will be used at the start of the simulation. Saved states can be found here: https://api.3di.live/v3.0/files/",
     )
     parser.add_argument(
-        "nr_years",
+        "--nr_years",
         default="10",
         metavar="NR_YEARS",
         help="Amount of years the statistics are based on",
