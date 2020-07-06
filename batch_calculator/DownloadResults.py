@@ -14,10 +14,10 @@ class DownloadResults:
         self.sim_id = sim_id
         self.model_id = model_id
         self.output_dir = output_dir
-        self.agg_dir = self.output_dir + "/" + "aggregation_netcdfs"
+        self.agg_dir = os.path.join(self.output_dir, "aggregation_netcdfs")
 
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
-        result_dir = self.output_dir + "/" + "simulation-" + str(self.sim_id)
+        result_dir = os.path.join(self.output_dir, "simulation-" + str(self.sim_id))
 
         if not os.path.exists(result_dir):
             os.mkdir(result_dir)
@@ -25,12 +25,12 @@ class DownloadResults:
         if not os.path.exists(self.agg_dir):
             os.mkdir(self.agg_dir)
 
-        if not os.path.exists(self.agg_dir + "/" + "gridadmin.h5"):
+        if not os.path.exists(os.path.join(self.agg_dir, "gridadmin.h5")):
             gridadmin = self._threedi_models.threedimodels_gridadmin_download(
                 self.model_id, async_req=False
             )
             self.write_file_from_url(
-                gridadmin.get_url, self.agg_dir + "/" + "gridadmin.h5"
+                gridadmin.get_url, os.path.join(self.agg_dir, "gridadmin.h5")
             )
             print("Created new gridadmin.h5")
 
@@ -41,15 +41,15 @@ class DownloadResults:
             if result.filename.startswith("agg"):
                 self.write_file_from_url(
                     download.get_url,
-                    self.agg_dir + "/" + self.append_id(result.filename),
+                    os.path.join(self.agg_dir, self.append_id(result.filename)),
                 )
                 print("Downloaded: ", result.filename)
             else:
                 self.write_file_from_url(
                     download.get_url,
-                    result_dir
-                    + "/"
-                    + self.append_id(result.filename),  # + '_sim-' + str(self.sim_id)
+                    os.path.join(
+                        result_dir, self.append_id(result.filename)
+                    ),  # + '_sim-' + str(self.sim_id)
                 )
                 print("Downloaded: ", result.filename)
 
