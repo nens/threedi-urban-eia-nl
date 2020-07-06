@@ -6,21 +6,12 @@ import logging
 import numpy as np
 import pandas
 
-# from batch_calculator.read_rainfall_events import BuiReader
-# from batch_calculator.StartSimulation import StartSimulation
-# from batch_calculator.DownloadResults import DownloadResults
 from batch_calculator.Batch import Batch
 from batch_calculator.DownloadResults import DownloadResults
 from threedi_api_client import ThreediApiClient
-
-# from threedigrid.admin.gridadmin import GridH5Admin
 from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
-
-# from openapi_client import SimulationsApi
-
 from openapi_client.api import ThreedimodelsApi
 
-# from openapi_client.api import OrganisationsApi
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +30,7 @@ def run_batch_calculator(**kwargs):
 
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
 
-    batch = Batch(  # TODO batch =
+    batch = Batch(
         kwargs.get("rain_files_dir"),
         client,
         kwargs.get("model_id"),
@@ -50,8 +41,9 @@ def run_batch_calculator(**kwargs):
         kwargs.get("saved_state_url"),
     )
 
+    # Script Emile
     nc_dir = batch.agg_dir
-    gridadmin = batch.agg_dir + "/" + "gridadmin.h5"
+    gridadmin = os.path.join(nc_dir, "gridadmin.h5")
     nr_years = int(kwargs["nr_years"])
 
     ## Read gridadmin file
