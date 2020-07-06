@@ -7,12 +7,12 @@ Usage
 -----
 
 To ensure correct behaviour please go through the following steps:  
-1.  Create a .env-file  
-2.  Create a folder with all the rain files you want to use in your simulations.
+1. Fill in your API/3Di username and password in the .env file located in the batch-calculator directory.  
+2. Create a folder with all the rain files you want to use in your simulations.
 These rain files should be in 'min,mm'-format, where min is the timestep in minutes
 and mm is the amount of rain that falls during the timestep in millimeters.  
-3.  Create an output folder in which the result files will be stored.  
-4.  
+3. Create an output folder in which the result files will be stored.  
+4. 
 
 
 Installation
