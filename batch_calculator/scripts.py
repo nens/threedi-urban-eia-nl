@@ -31,10 +31,10 @@ def run_batch_calculator(**kwargs):
     USERNAME = input("Username: ")
     PASSWORD = getpass("Password: ")
     config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
-
     client = ThreediApiClient(config=config)
-    threedi_models = ThreedimodelsApi(client)
 
+    # Models
+    threedi_models = ThreedimodelsApi(client)
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
 
     batch = Batch(

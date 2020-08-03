@@ -54,7 +54,6 @@ class StartSimulation:
         )
 
         # Create a timed save state at the end of the simulation duration
-        # OP HET MOMENT WERKT DWF NOG NIET, DUS VOORLOPIG OVERSLAAN
         # self._sim.simulations_create_saved_states_timed_create(
         #     self.created_sim_id,
         #     {
