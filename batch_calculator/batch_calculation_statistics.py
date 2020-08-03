@@ -35,7 +35,7 @@ def get_args():
     return parser.parse_args()
 
 
-def repetition_time_volumes(weir_results, n, stats=STATS):
+def repetition_time_volumes(weir_results, n, stats=[1, 2, 5, 10]):
 
     sorted_weir_results = sorted(list(weir_results), reverse=True)
 
