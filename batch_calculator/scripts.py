@@ -4,7 +4,6 @@ import argparse
 import os
 import logging
 import numpy as np
-import pandas
 
 
 from batch_calculator.Batch import Batch
