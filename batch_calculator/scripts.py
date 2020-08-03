@@ -14,9 +14,8 @@ from batch_calculator.batch_calculation_statistics import (
     repetition_time_volumes,
 )
 from threedi_api_client import ThreediApiClient
-from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
 from openapi_client.api import ThreedimodelsApi
-from getpass import getpass
+from getpass import getpass, getuser
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,8 @@ def run_batch_calculator(**kwargs):
 
     # Authentication
     API_HOST = "https://api.3di.live/v3.0"
-    USERNAME = input("Username: ")
+    # USERNAME = input("Username: ")
+    USERNAME = getuser()
     PASSWORD = getpass("Password: ")
     config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
     client = ThreediApiClient(config=config)

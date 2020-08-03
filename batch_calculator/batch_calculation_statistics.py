@@ -38,7 +38,7 @@ def get_args():
 def repetition_time_volumes(weir_results, n, stats=[1, 2, 5, 10]):
 
     sorted_weir_results = sorted(list(weir_results), reverse=True)
-
+    print(sorted_weir_results)
     if n == 10:
         T_volume_list = []
         for T in stats:
@@ -99,7 +99,7 @@ def batch_calculation_statistics(netcdf_dir, gridadmin, nr_years):
 
         frequency = float(sum(results[weir] > 0) / nr_years)
         average_volume = sum(results[weir]) / nr_years
-
+        
         weir_tx_list = [
             *repetition_time_volumes(weir_results=results[weir], n=nr_years)
         ]

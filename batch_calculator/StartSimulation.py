@@ -1,8 +1,10 @@
 import time
+import logging
 
 from openapi_client import SimulationsApi
 from openapi_client.models.simulation import Simulation
 
+logger = logging.getLogger(__name__)
 
 class StartSimulation:
     def __init__(
@@ -62,11 +64,12 @@ class StartSimulation:
         #     },
         # )
 
-        # Add global 2D waterlevel
-        if saved_state_url is None:
-            self._sim.simulations_initial2d_water_level_constant_create(
-                self.created_sim_id, {"value": self.water_level_2d},
-            )
+
+        # Add constant global 2D waterlevel
+        # if saved_state_url is None:
+        #     self._sim.simulations_initial2d_water_level_constant_create(
+        #         self.created_sim_id, {"value": self.water_level_2d},
+        #     )
 
         # Add the 1D waterlevels that have been specified in v2_connection_nodes
         if saved_state_url is None:
@@ -83,7 +86,7 @@ class StartSimulation:
         )
 
         if waterlvl_2d_const.count == 0 and waterlvl_2d_raster.count == 0:
-            raise ValueError("No 2D waterlevel has been provided")
+            logger.warning("No 2D waterlevel has been provided")
 
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =
