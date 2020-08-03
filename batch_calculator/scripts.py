@@ -9,6 +9,8 @@ import pandas
 
 from batch_calculator.Batch import Batch
 from batch_calculator.DownloadResults import DownloadResults
+from batch_calculator.batch_calculation_statistics import batch_calculation_statistics
+from batch_calculator.batch_calculation_statistics import repetition_time_volumes
 from threedi_api_client import ThreediApiClient
 from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
 from openapi_client.api import ThreedimodelsApi
@@ -163,10 +165,12 @@ def get_parser():
         "--nr_years",
         default="10",
         metavar="NR_YEARS",
-        help="Amount of years the statistics are based on",
+        choices=["10", "25"],
+        help="Batch calculation length (10 or 25 years)",
     )
     return parser
 
+        
 
 def main():
     """Execute main program with multiprocessing."""
