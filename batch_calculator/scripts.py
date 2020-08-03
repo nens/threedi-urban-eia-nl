@@ -55,60 +55,12 @@ def run_batch_calculator(**kwargs):
     gridadmin = os.path.join(nc_dir, "gridadmin.h5")
     nr_years = int(kwargs["nr_years"])
 
-    ## Read gridadmin file
-    nc_files = [file for file in os.listdir(nc_dir) if file.endswith(".nc")]
-
-    for i, aggregate_file in enumerate(nc_files):
-        print(aggregate_file)
-        ga = GridH5AggregateResultAdmin(gridadmin, os.path.join(nc_dir, aggregate_file))
-
-        # Filter weir timeseries
-        weir_data = (
-            ga.lines.filter(content_type="v2_weir")
-            .only("content_pk", "content_type", "q_cum")
-            .timeseries(indexes=slice(None))
-            .data
-        )
-
-        # Loop over weirs and add data to dataframe
-        if i == 0:
-            results = pandas.DataFrame(
-                columns=["aggregate_netcdf", *weir_data["content_pk"]]
-            )
-        cumulative_discharge = [x for x in weir_data["q_cum"][-1]]
-        results.loc[i] = [aggregate_file, *cumulative_discharge]
-
-    # Find results for each weir
-    stats = [1, 2, 5, 10]
-    output = pandas.DataFrame(
-        columns=[
-            "weir_id",
-            "overstortfrequentie",
-            "gem_overstortvolume",
-            "vuiluitworp",
-            "t1",
-            "t2",
-            "t5",
-            "t10",
-        ]
+    batch_calculation_stats_table = batch_calculation_statistics(
+        netcdf_dir=nc_dir, gridadmin=gridadmin, nr_years=nr_years
     )
-    for i, weir in enumerate(results.columns[1:]):
-        weir_overstortfrequentie = int(sum(results[weir] > 0) / nr_years)
-        weir_gem_overstortvolume = sum(results[weir]) / nr_years
-        weir_vuiluitworp = weir_gem_overstortvolume * 0.25
-        weir_tx_list = [
-            np.percentile(results[weir], (1 - 1 / stat) * 100) for stat in stats
-        ]
-        output.loc[i] = [
-            weir,
-            weir_overstortfrequentie,
-            weir_gem_overstortvolume,
-            weir_vuiluitworp,
-            *weir_tx_list,
-        ]
 
-    output.to_csv(
-        os.path.join(kwargs["results_dir"], "vuilemissie_statistieken.csv"),
+    batch_calculation_stats_table.to_csv(
+        os.path.join(kwargs["results_dir"], "batch_calculator_statistics.csv"),
         index=False,
     )
 
@@ -170,7 +122,6 @@ def get_parser():
     )
     return parser
 
-        
 
 def main():
     """Execute main program with multiprocessing."""
