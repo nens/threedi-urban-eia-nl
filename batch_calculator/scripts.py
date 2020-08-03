@@ -81,11 +81,6 @@ def get_parser():
         help="Verbose output",
     )
     parser.add_argument(
-        "--api-config",
-        default=os.path.abspath(".env"),
-        help="Location of the .env file required for authentication",
-    )
-    parser.add_argument(
         "--org_id",
         default="61f5a464c35044c19bc7d4b42d7f58cb",
         help="UUID of the organisation used for the 3Di calculation",
