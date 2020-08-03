@@ -5,13 +5,14 @@ import os
 import logging
 import numpy as np
 import pandas
-import getpass
+
 
 from batch_calculator.Batch import Batch
 from batch_calculator.DownloadResults import DownloadResults
 from threedi_api_client import ThreediApiClient
 from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
 from openapi_client.api import ThreedimodelsApi
+from getpass import getpass
 
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,17 @@ def run_batch_calculator(**kwargs):
         log_level = logging.INFO
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
-    api_config = kwargs.get("api_config")
-    client = ThreediApiClient(api_config)
+    # Authentication
+    API_HOST = "https://api.3di.live/v3.0"
+    USERNAME = input("Username")
+    PASSWORD = getpass("Password")
+    config = {
+        "API_HOST": API_HOST,
+        "API_USERNAME": USERNAME,
+        "API_PASSWORD": PASSWORD
+    }
+
+    client = ThreediApiClient(config=config)
     threedi_models = ThreedimodelsApi(client)
 
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
