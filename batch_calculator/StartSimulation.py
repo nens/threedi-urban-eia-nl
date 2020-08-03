@@ -74,6 +74,17 @@ class StartSimulation:
                 self.created_sim_id, {},
             )
 
+        # Check if 2D waterlevel is provided
+        waterlvl_2d_const = self._sim.simulations_initial2d_water_level_constant_list(
+            self.created_sim_id
+        )
+        waterlvl_2d_raster = self._sim.simulations_initial2d_water_level_raster_list(
+            self.created_sim_id
+        )
+
+        if waterlvl_2d_const.count == 0 and waterlvl_2d_raster.count == 0:
+            print("No 2D waterlevel has been provided")
+
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =
             simulation_pk=self.created_sim_id, data={"name": "start"}
