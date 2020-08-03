@@ -28,13 +28,9 @@ def run_batch_calculator(**kwargs):
 
     # Authentication
     API_HOST = "https://api.3di.live/v3.0"
-    USERNAME = input("Username")
-    PASSWORD = getpass("Password")
-    config = {
-        "API_HOST": API_HOST,
-        "API_USERNAME": USERNAME,
-        "API_PASSWORD": PASSWORD
-    }
+    USERNAME = input("Username: ")
+    PASSWORD = getpass("Password: ")
+    config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
 
     client = ThreediApiClient(config=config)
     threedi_models = ThreedimodelsApi(client)
