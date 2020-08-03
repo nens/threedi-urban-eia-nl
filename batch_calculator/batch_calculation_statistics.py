@@ -99,7 +99,7 @@ def batch_calculation_statistics(netcdf_dir, gridadmin, nr_years):
 
         frequency = float(sum(results[weir] > 0) / nr_years)
         average_volume = sum(results[weir]) / nr_years
-        
+
         weir_tx_list = [
             *repetition_time_volumes(weir_results=results[weir], n=nr_years)
         ]

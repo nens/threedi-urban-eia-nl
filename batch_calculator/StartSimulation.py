@@ -6,6 +6,7 @@ from openapi_client.models.simulation import Simulation
 
 logger = logging.getLogger(__name__)
 
+
 class StartSimulation:
     def __init__(
         self,
@@ -64,6 +65,11 @@ class StartSimulation:
         #     },
         # )
 
+        # Add 2D waterlevel raster if available
+        # waterlvl_2d_raster = self._sim.simulations_initial2d_water_level_raster_list(
+        #     self.created_sim_id
+        # )
+        # if waterlvl_2d_raster.count != 0:
 
         # Add constant global 2D waterlevel
         # if saved_state_url is None:
