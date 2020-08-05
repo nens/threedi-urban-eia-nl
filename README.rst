@@ -2,7 +2,8 @@ batch-calculator
 ==========================================
 
 Introduction
-
+------------
+This tool can be used for reeksberekeningen.
 
 Installation
 ------------
@@ -32,4 +33,4 @@ Example
 -------
 Example command::
 
-  $ python run-batch-calculator.py model_id=12345 rain_files_dir=C:\rain_files results_dir=C:\results --ini_2d_water_level_constant 0.8
+  $ python scripts.py model_id=12345 rain_files_dir=C:\rain_files results_dir=C:\results --ini_2d_water_level_constant 0.8
