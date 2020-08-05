@@ -50,7 +50,7 @@ def run_batch_calculator(**kwargs):
         saved_state_url = kwargs.get("saved_state_url"),
     )
 
-    # Script Emile
+    # Reeksberekeningen statistics (script Emile)
     nc_dir = batch.agg_dir
     gridadmin = os.path.join(nc_dir, "gridadmin.h5")
     nr_years = int(kwargs["nr_years"])

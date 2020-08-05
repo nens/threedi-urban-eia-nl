@@ -24,4 +24,5 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. Run ``$ python scripts.py -h`` to see which arguments you need to specify for your specific case.
 
 
-
+Example
+-------
