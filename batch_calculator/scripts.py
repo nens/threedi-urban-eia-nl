@@ -40,14 +40,14 @@ def run_batch_calculator(**kwargs):
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
 
     batch = Batch(
-        rain_files_dir = kwargs.get("rain_files_dir"),
-        client = client,
-        model_id = kwargs.get("model_id"),
-        model_name = model_name,
-        org_id = kwargs.get("org_id"),
-        results_dir = kwargs.get("results_dir"),
-        ini_2d_water_level_constant = kwargs.get("ini_2d_water_level_constant"),
-        saved_state_url = kwargs.get("saved_state_url"),
+        rain_files_dir=kwargs.get("rain_files_dir"),
+        client=client,
+        model_id=kwargs.get("model_id"),
+        model_name=model_name,
+        org_id=kwargs.get("org_id"),
+        results_dir=kwargs.get("results_dir"),
+        ini_2d_water_level_constant=kwargs.get("ini_2d_water_level_constant"),
+        saved_state_url=kwargs.get("saved_state_url"),
     )
 
     # Reeksberekeningen statistics (script Emile)
