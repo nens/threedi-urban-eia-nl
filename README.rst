@@ -25,7 +25,7 @@ To ensure the correct behaviour of this tool please go through the following ste
     30,1.5
     60,0.0
 #. Create an output folder in which the result files will be stored.
-#. Find the id of your model in the Threedi Model List (https://api.3di.live/v3.0/threedimodels/)
+#. Find the id of your model in the Threedi Model List: https://api.3di.live/v3.0/threedimodels/
 #. Open a command window and navigate to the batch-calculator folder.
 #. Run ``$ python scripts.py -h`` to see which arguments you need to specify for your specific case.
 
