@@ -40,14 +40,14 @@ def run_batch_calculator(**kwargs):
     model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
 
     batch = Batch(
-        kwargs.get("rain_files_dir"),
-        client,
-        kwargs.get("model_id"),
-        model_name,
-        kwargs.get("org_id"),
-        kwargs.get("ini_2d_water_level"),
-        kwargs.get("results_dir"),
-        kwargs.get("saved_state_url"),
+        rain_files_dir = kwargs.get("rain_files_dir"),
+        client = client,
+        model_id = kwargs.get("model_id"),
+        model_name = model_name,
+        org_id = kwargs.get("org_id"),
+        results_dir = kwargs.get("results_dir"),
+        ini_2d_water_level_constant = kwargs.get("ini_2d_water_level_constant"),
+        saved_state_url = kwargs.get("saved_state_url"),
     )
 
     # Script Emile
@@ -99,9 +99,9 @@ def get_parser():
         help="The directory in which all downloaded results will be stored",
     )
     parser.add_argument(
-        "--ini_2d_water_level",
+        "--ini_2d_water_level_constant",
         metavar="INI_2D_WATER_LEVEL",
-        help="The initial 2D water level in mNAP",
+        help="The initial 2D water level constant in mNAP",
     )
     parser.add_argument(
         "--saved_state_url",

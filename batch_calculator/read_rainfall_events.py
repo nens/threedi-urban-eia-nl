@@ -20,7 +20,7 @@ class RainEventReader:
             )
             print("start_date = " + str(self.start_date))
         except ValueError as e:
-            print("WARNING: ", e)
+            print("WARNING:", e)
             print("Using default date => start_date = " + str(self.start_date))
 
         # Default start_time
@@ -34,7 +34,7 @@ class RainEventReader:
             )
             print("start_time = " + str(self.start_time))
         except ValueError as e:
-            print("WARNING: ", e)
+            print("WARNING:", e)
             print("Using default time => start_time = " + str(self.start_time))
 
         # Combine self.start_date and self.start_time
