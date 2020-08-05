@@ -16,7 +16,8 @@ class StartSimulation:
         organisation_id,
         duration,
         rain_event,
-        water_level_2d,
+        ini_2d_water_level_constant=None,
+        ini_2d_water_level_raster_url=None,
         saved_state_url=None,
         start_datetime="2020-01-01T00:00:00",
     ):
@@ -29,7 +30,8 @@ class StartSimulation:
         self.start_datetime = start_datetime
         self.sim_name = model_name + "_" + self.start_datetime
         self.duration = duration
-        self.water_level_2d = water_level_2d
+        self.ini_2d_water_level_constant = ini_2d_water_level_constant
+        self.ini_2d_water_level_raster_url = ini_2d_water_level_raster_url
 
         my_sim = Simulation(
             name=self.sim_name,
@@ -65,17 +67,21 @@ class StartSimulation:
         #     },
         # )
 
-        # Add 2D waterlevel raster if available
-        # waterlvl_2d_raster = self._sim.simulations_initial2d_water_level_raster_list(
-        #     self.created_sim_id
-        # )
-        # if waterlvl_2d_raster.count != 0:
+        # Add 2D waterlevel raster if available (still seems bugged)
+        # if self.ini_2d_water_level_raster_url is not None:
+        #     self._sim.simulations_initial2d_water_level_raster_create(
+        #         self.created_sim_id,
+        #         {
+        #             "aggregation_method": "mean",
+        #             "initial_waterlevel": self.ini_2d_water_level_raster_url,
+        #         },
+        #     )
 
         # Add constant global 2D waterlevel
-        # if saved_state_url is None:
-        #     self._sim.simulations_initial2d_water_level_constant_create(
-        #         self.created_sim_id, {"value": self.water_level_2d},
-        #     )
+        if saved_state_url is None and self.ini_2d_water_level_raster_url is None:
+            self._sim.simulations_initial2d_water_level_constant_create(
+                self.created_sim_id, {"value": self.ini_2d_water_level_constant},
+            )
 
         # Add the 1D waterlevels that have been specified in v2_connection_nodes
         if saved_state_url is None:

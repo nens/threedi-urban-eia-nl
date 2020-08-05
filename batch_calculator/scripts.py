@@ -94,14 +94,14 @@ def get_parser():
         help="The directory in which all the rain files are located",
     )
     parser.add_argument(
-        "ini_2d_water_level",
-        metavar="INI_2D_WATER_LEVEL",
-        help="The initial 2D water level in mNAP",
-    )
-    parser.add_argument(
         "results_dir",
         metavar="RESULTS_DIR",
         help="The directory in which all downloaded results will be stored",
+    )
+    parser.add_argument(
+        "--ini_2d_water_level",
+        metavar="INI_2D_WATER_LEVEL",
+        help="The initial 2D water level in mNAP",
     )
     parser.add_argument(
         "--saved_state_url",
