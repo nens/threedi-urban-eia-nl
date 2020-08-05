@@ -18,8 +18,7 @@ Usage
 
 To ensure the correct behaviour of this tool please go through the following steps:
 
-#. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below:
-  ::
+#. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below::
 
     0,5.0
     30,1.5
@@ -33,4 +32,4 @@ Example
 -------
 Example command::
 
-  $ python run-batch-calculator.py model_id = 12345 rain_files_dir = C:\rain_files results_dir = C:\results
+  $ python run-batch-calculator.py model_id=12345 rain_files_dir=C:\rain_files results_dir=C:\results --ini_2d_water_level_constant 0.8
