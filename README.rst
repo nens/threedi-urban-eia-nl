@@ -33,4 +33,4 @@ Example
 -------
 Example command::
 
-  $ python run-batch-calculator.py
+  $ python run-batch-calculator.py model_id = 12345 rain_files_dir = C:\rain_files results_dir = C:\results
