@@ -27,6 +27,7 @@ class Batch:
         self.model_name = model_name
         self.org_id = org_id
         self.ini_2d_water_level_constant = ini_2d_water_level_constant
+        self.ini_2d_water_level_raster_url = ini_2d_water_level_raster_url
         self.results_dir = results_dir
         self.saved_state_url = saved_state_url
 
@@ -48,7 +49,7 @@ class Batch:
             rain_file_path = os.path.join(self.rain_files_dir, filename)
 
             rain_event = RainEventReader(rain_file_path)
-
+            
             sim = StartSimulation(
                 self._client,
                 self.model_id,
