@@ -49,7 +49,7 @@ class Batch:
             rain_file_path = os.path.join(self.rain_files_dir, filename)
 
             rain_event = RainEventReader(rain_file_path)
-            
+
             sim = StartSimulation(
                 self._client,
                 self.model_id,

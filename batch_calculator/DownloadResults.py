@@ -15,7 +15,7 @@ class DownloadResults:
         self.model_id = model_id
         self.output_dir = output_dir
         self.agg_dir = os.path.join(self.output_dir, "aggregation_netcdfs")
-        
+
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
         result_dir = os.path.join(self.output_dir, "simulation-" + str(self.sim_id))
 

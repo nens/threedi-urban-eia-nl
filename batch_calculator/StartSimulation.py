@@ -52,13 +52,14 @@ class StartSimulation:
             self._sim.simulations_initial_saved_state_create(
                 self.created_sim_id, {"saved_state": self.saved_state_url},
             )
+            print("Using savedstate url: ", self.saved_state_url)
 
         # Create a rain timeseries
         self._sim.simulations_events_rain_timeseries_create(
             self.created_sim_id, rain_event.rain_data
         )
 
-        # Create a timed save state at the end of the simulation duration
+        # # Create a timed save state at the end of the simulation duration
         # self._sim.simulations_create_saved_states_timed_create(
         #     self.created_sim_id,
         #     {
@@ -66,7 +67,7 @@ class StartSimulation:
         #         "time": rain_event.duration,
         #     },
         # )
-        
+
         # Opties:
         # 1.    Schrijf saved state sim id naar text file zodat je id behoudt ook bij een crash
         # 2.    Met logging terugggeven

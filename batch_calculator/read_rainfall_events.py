@@ -83,8 +83,8 @@ class RainEventReader:
         ]
 
         # Append the last element of timeseries to timeseries_conv
-        timeseries_conv.append([timeseries[-1][0] * 60,timeseries[-1][1]])
-        
+        timeseries_conv.append([timeseries[-1][0] * 60, timeseries[-1][1]])
+
         rain_data.update(values=timeseries_conv)
         return rain_data
 

@@ -34,10 +34,10 @@ def run_batch_calculator(**kwargs):
     PASSWORD = getpass("Password: ")
     config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
     client = ThreediApiClient(config=config)
-    
+
     # Debugging
-    client.configuration.debug = True 
-    print("Debugging is ",client.configuration.debug)
+    client.configuration.debug = True
+    print("Debugging is ", client.configuration.debug)
 
     # Models
     threedi_models = ThreedimodelsApi(client)
@@ -110,7 +110,7 @@ def get_parser():
     parser.add_argument(
         "--saved_state_url",
         metavar="SAVED_STATE_URL",
-        help="The url of the saved state that will be used at the start of the simulation. Saved states can be found here: https://api.3di.live/v3.0/files/",
+        help="The url of a timed saved state with id = [saved_state_id] belonging to a simulation with id = [sim_id] that will be used at the start of the simulation. Timed saved state urls should be provided in the following format: https://api.3di.live/v3.0/simulations/[sim_id]/create-saved-states/timed/[saved_state_id] Example: https://api.3di.live/v3.0/simulations/4719/create-saved-states/timed/1623/",
     )
     parser.add_argument(
         "--nr_years",
