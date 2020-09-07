@@ -34,6 +34,10 @@ def run_batch_calculator(**kwargs):
     PASSWORD = getpass("Password: ")
     config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
     client = ThreediApiClient(config=config)
+    
+    # Debugging
+    client.configuration.debug = True 
+    print("Debugging is ",client.configuration.debug)
 
     # Models
     threedi_models = ThreedimodelsApi(client)

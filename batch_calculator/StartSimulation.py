@@ -66,8 +66,12 @@ class StartSimulation:
         #         "time": rain_event.duration,
         #     },
         # )
+        
+        # Opties:
+        # 1.    Schrijf saved state sim id naar text file zodat je id behoudt ook bij een crash
+        # 2.    Met logging terugggeven
 
-        # Add 2D waterlevel raster if available (still seems bugged)
+        # # Add 2D waterlevel raster if available (still seems bugged)
         # if self.ini_2d_water_level_raster_url is not None:
         #     self._sim.simulations_initial2d_water_level_raster_create(
         #         self.created_sim_id,
