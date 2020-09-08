@@ -32,18 +32,20 @@ class Batch:
         self.saved_state_url = saved_state_url
 
         if (
-            self._threedi_models.threedimodels_rasters_list(
-                self.model_id, type="initial_waterlevel_file"
+            self._threedi_models.threedimodels_initial_waterlevels_list(
+                self.model_id
             ).count
             == 1
         ):
             self.ini_2d_water_level_raster_url = (
-                self._threedi_models.threedimodels_rasters_list(
-                    self.model_id, type="initial_waterlevel_file"
+                self._threedi_models.threedimodels_initial_waterlevels_list(
+                    self.model_id
                 )
                 .results[0]
                 .url
             )
+            
+        # "https://api.3di.live/v3.0/threedimodels/7101/initial_waterlevels/476/"
 
         for filename in os.listdir(self.rain_files_dir):
             rain_file_path = os.path.join(self.rain_files_dir, filename)

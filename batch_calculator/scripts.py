@@ -51,6 +51,7 @@ def run_batch_calculator(**kwargs):
         org_id=kwargs.get("org_id"),
         results_dir=kwargs.get("results_dir"),
         ini_2d_water_level_constant=kwargs.get("ini_2d_water_level_constant"),
+        ini_2d_water_level_raster_url=kwargs.get("ini_2d_water_level_raster_url"),
         saved_state_url=kwargs.get("saved_state_url"),
     )
 
@@ -106,6 +107,11 @@ def get_parser():
         "--ini_2d_water_level_constant",
         metavar="INI_2D_WATER_LEVEL",
         help="The initial 2D water level constant in mNAP",
+    )
+    parser.add_argument(
+        "--ini_2d_water_level_raster_url",
+        metavar="INI_2D_WATER_LEVEL_RASTER",
+        help="The initial 2D water level raster url",
     )
     parser.add_argument(
         "--saved_state_url",

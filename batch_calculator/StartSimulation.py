@@ -60,33 +60,34 @@ class StartSimulation:
         )
 
         # # Create a timed save state at the end of the simulation duration
-        # self._sim.simulations_create_saved_states_timed_create(
-        #     self.created_sim_id,
-        #     {
-        #         "name": "saved_state_sim" + str(self.created_sim_id),
-        #         "time": rain_event.duration,
-        #     },
-        # )
+        self._sim.simulations_create_saved_states_timed_create(
+            self.created_sim_id,
+            {
+                "name": "saved_state_sim" + str(self.created_sim_id),
+                "time": rain_event.duration,
+            },
+        )
 
         # Opties:
         # 1.    Schrijf saved state sim id naar text file zodat je id behoudt ook bij een crash
         # 2.    Met logging terugggeven
 
-        # # Add 2D waterlevel raster if available (still seems bugged)
-        # if self.ini_2d_water_level_raster_url is not None:
-        #     self._sim.simulations_initial2d_water_level_raster_create(
-        #         self.created_sim_id,
-        #         {
-        #             "aggregation_method": "mean",
-        #             "initial_waterlevel": self.ini_2d_water_level_raster_url,
-        #         },
-        #     )
+        # Add 2D waterlevel raster if available (still seems bugged)
+        if self.ini_2d_water_level_raster_url is not None:
+            self._sim.simulations_initial2d_water_level_raster_create(
+                self.created_sim_id,
+                {
+                    "aggregation_method": "mean",
+                    "initial_waterlevel": self.ini_2d_water_level_raster_url,
+                },
+            )
 
-        # Add constant global 2D waterlevel
-        if saved_state_url is None and self.ini_2d_water_level_raster_url is None:
+        # Add constant global 2D waterlevel if no 2D waterlevel raster has been provided
+        if self.ini_2d_water_level_raster_url is None: # Removed: 'saved_state_url is None and'
             self._sim.simulations_initial2d_water_level_constant_create(
                 self.created_sim_id, {"value": self.ini_2d_water_level_constant},
             )
+            print("Using constant 2d waterlevel of: ", self.ini_2d_water_level_constant, " mNAP")
 
         # Add the 1D waterlevels that have been specified in v2_connection_nodes
         if saved_state_url is None:
