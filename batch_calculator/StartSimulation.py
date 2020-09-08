@@ -118,12 +118,12 @@ class StartSimulation:
 
         # Start the simulation with id = created_sim_id
         self._sim.simulations_actions_create(  # TODO sim_start =
-            simulation_pk=self.created_sim_id, data={"name": "start"}
+            simulation_pk=self.created_sim_id, data={"name": "queue"}
         )
 
         status = self._sim.simulations_status_list(self.created_sim_id, async_req=False)
         print(status.name, end="\r", flush=True)
-        while status.name == "starting":
+        while status.name == "queued" or status.name == "starting":
             print(status.name, end="\r", flush=True)
             status = self._sim.simulations_status_list(
                 self.created_sim_id, async_req=False
@@ -140,12 +140,11 @@ class StartSimulation:
         progress = self._sim.simulations_progress_list(
             self.created_sim_id, async_req=False
         )
-        print(progress.percentage)
         while progress.percentage < 100:
             progress = self._sim.simulations_progress_list(
                 self.created_sim_id, async_req=False
             )
-            print(progress.percentage, end="\r", flush=True)
+            print(progress.percentage, "%", end="\r", flush=True)
             time.sleep(1.0)
 
         # Check saved state upload

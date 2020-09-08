@@ -37,7 +37,7 @@ def run_batch_calculator(**kwargs):
 
     # Debugging
     client.configuration.debug = True
-    print("Debugging is ", client.configuration.debug)
+    print("Debugging is", client.configuration.debug)
 
     # Models
     threedi_models = ThreedimodelsApi(client)
