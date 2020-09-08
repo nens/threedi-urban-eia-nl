@@ -44,7 +44,7 @@ class Batch:
                 .results[0]
                 .url
             )
-            
+
         # "https://api.3di.live/v3.0/threedimodels/7101/initial_waterlevels/476/"
 
         for filename in os.listdir(self.rain_files_dir):
