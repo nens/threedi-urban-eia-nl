@@ -11,7 +11,7 @@ c = conn.cursor()
 
 # Create empty pandas dataframe for v2_impervious_surface
 df = pd.DataFrame(columns=['lib', 'qty1', 'qty2'])
-for row in c.execute('SELECT id, nr_of_inhabitants FROM v2_impervious_surface WHERE nr_of_inhabitants IS NOT NULL AND nr_of_inhabitants != 0'):
+for row in c.execute('SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id'):
     print(row)
 
 # Close connection with spatialite
