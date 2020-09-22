@@ -1,6 +1,6 @@
 import os
 import sqlite3
-import pandas as pd
+import json
 
 baseDir = "C:/Users/Wout.Lexmond/notebooks/reeksberekeningen"
 sqliteName = "loon.sqlite"
@@ -9,8 +9,6 @@ sqlitePath = os.path.join(baseDir, sqliteName)
 conn = sqlite3.connect(sqlitePath)
 c = conn.cursor()
 
-# Create empty pandas dataframe for v2_impervious_surface
-df = pd.DataFrame(columns=['lib', 'qty1', 'qty2'])
 for row in c.execute('WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id'):
     print(row)
 
