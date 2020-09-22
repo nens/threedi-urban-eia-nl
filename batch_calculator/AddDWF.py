@@ -9,14 +9,27 @@ sqlitePath = os.path.join(baseDir, sqliteName)
 conn = sqlite3.connect(sqlitePath)
 c = conn.cursor()
 
+# Create empty json structure
+data = {}
+data['dwfNode'] = []
+timesteps = [] # Duration voor nodig uit read_rainfall_events?
+dwfPerSec = [] # dwfPerPerson * dwfFactor / 3600
+
+# Create a table that contains nr_of_inhabitants per connection_node and iterate over it
 for row in c.execute('WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id'):
+    data['dwfNode'].append({
+        "offset": 0,
+        "values": [[0, 10], [20, 30]],
+        "units": "m3/s",
+        "connection_node": row[0]
+    })
     print(row)
 
 # Close connection with spatialite
 conn.close()
 
-
-dwfPerPerson = 120
+# DWF per person = 120 l/inhabitant / 1000 = 0.12 m3/inhabitant
+dwfPerPerson = 0.12
 
 dwfFactors = {
     '0-1': 0.015,
@@ -44,3 +57,7 @@ dwfFactors = {
     '22-23': 0.02,
     '23-24': 0.02
 }
+
+dwfFactors.update((x, y*dwfPerPerson) for x, y in dwfFactors.items())
+
+print(dwfFactors)
