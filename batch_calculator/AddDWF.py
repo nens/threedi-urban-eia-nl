@@ -1,5 +1,6 @@
-import sqlite3
 import os
+import sqlite3
+import pandas as pd
 
 baseDir = "C:/Users/Wout.Lexmond/notebooks/reeksberekeningen"
 sqliteName = "loon.sqlite"
@@ -8,8 +9,14 @@ sqlitePath = os.path.join(baseDir, sqliteName)
 conn = sqlite3.connect(sqlitePath)
 c = conn.cursor()
 
-for row in c.execute('SELECT * FROM v2_impervious_surface'):
+# Create empty pandas dataframe for v2_impervious_surface
+df = pd.DataFrame(columns=['lib', 'qty1', 'qty2'])
+for row in c.execute('SELECT id, nr_of_inhabitants FROM v2_impervious_surface WHERE nr_of_inhabitants IS NOT NULL AND nr_of_inhabitants != 0'):
     print(row)
+
+# Close connection with spatialite
+conn.close()
+
 
 dwfPerPerson = 120
 
