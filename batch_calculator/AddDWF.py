@@ -25,7 +25,7 @@ for row in c.execute(
     data["dwfNode"].append(
         {
             "offset": 0,
-            "values": [[0, 10], [20, 30]],
+            "values": [[0, 10], [20, 30]], # multiply second value with nr_of_inhabitants (row[1])
             "units": "m3/s",
             "connection_node": row[0],
         }
