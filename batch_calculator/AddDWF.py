@@ -71,11 +71,6 @@ def generate_upload_json_for_rain_event(
 ):
     """Generates a JSON-file that contains information about the dry weather flow on each connection node during the entire simulation."""
 
-    # starting_hour not the right format yet
-    # starting_hour = datetime.strftime(
-    #     datetime.strptime(rain_event_start_time, "%H:%M:%S"), "%H"
-    # )
-
     # Determine the starting hour
     starting_hour = datetime.strptime(rain_event_start_time, "%H:%M:%S").hour
 
@@ -86,6 +81,7 @@ def generate_upload_json_for_rain_event(
     if secs_in_first_hour == 0:
         secs_in_first_hour = 3600
 
+    # Calculate the seconds remaining
     remaining_seconds = rain_event_duration - secs_in_first_hour
     print(remaining_seconds)
     remaining_hours = remaining_seconds // 3600
@@ -93,19 +89,19 @@ def generate_upload_json_for_rain_event(
     secs_in_last_hour = remaining_seconds % 3600
     print(secs_in_last_hour)
 
+    # Create a list that will hold the dwf factor for each timestep of the 1D lateral and fill with the first two timesteps
     dwfFactorPerTimestep = [
         [0, dwfFactors[starting_hour % 24][1]],
         [secs_in_first_hour, dwfFactors[(starting_hour + 1) % 24][1]],
-    ]  # secs_in_first_hour moet 3600 zijn wanneer deze nul is
+    ]
 
-    number_of_whole_hours = list(range(remaining_hours))  # Check dit nog eens
+    number_of_whole_hours = list(range(remaining_hours))
     print(number_of_whole_hours)
+    # Loop over the remaining whole hours and append the new timesteps and their corresponding dwf factors
     for h in number_of_whole_hours:
-        # timesteps.append(timesteps[i] + 3600)
         new_timestep = dwfFactorPerTimestep[-1][0] + 3600
         newFactorHour = starting_hour + h + 2
         new_factor = dwfFactors[newFactorHour % 24][1]
-        # dwfFactors[(starting_hour + i) % 24]
         dwfFactorPerTimestep.append([new_timestep, new_factor])
 
     # Append last timestep if there are seconds in the last hour
@@ -113,20 +109,16 @@ def generate_upload_json_for_rain_event(
         dwfFactorPerTimestep.append(
             [new_timestep + secs_in_last_hour, dwfFactors[(newFactorHour + 1) % 24][1]]
         )
-    # print(new_timestep)
+
     # Generate JSON for each connection node
     for i in enumerate(dwf_on_each_node):
-        # dwfPerTimeStep = dwfFactorPerTimestep
+
         # print(dwf_on_each_node[i[0]][1])
         dwfPerTimeStep = [
-            # Maybe with NUMPY
             [row[0], row[1] * dwf_on_each_node[i[0]][1]]
             for row in dwfFactorPerTimestep
         ]
-        # [print(row) for j in row]
-        # [row[0], row[1] * dwf_on_each_node[i][1]]
-        # print(dwfPerTimeStep)
-        # [j[0], j[1] * dwf_on_each_node[i][1]]
+
         data["dwfNode"].append(
             {
                 "offset": 0,  # Wat doet offset bij laterals?
