@@ -16,14 +16,7 @@ sqlitePath = os.path.join(baseDir, sqliteName)
 conn = sqlite3.connect(sqlitePath)
 c = conn.cursor()
 
-# Create empty json structure
-data = {}
-data["dwfNode"] = []
-timesteps = []  # Duration voor nodig uit read_rainfall_events?
-dwfPerSec = (
-    []
-)  # dwfPerPerson * dwfFactor / 3600. Needs to be generated over the whole duration
-dwfPerTimestep = [[timesteps[i], dwfPerSec[i]] for i in enumerate(timesteps[0:-1])]
+# Create empty list that holds dry weather flow per node
 dwfPerNode = []
 
 # Create a table that contains nr_of_inhabitants per connection_node and iterate over it
@@ -110,6 +103,9 @@ def generate_upload_json_for_rain_event(
             [new_timestep + secs_in_last_hour, dwfFactors[(newFactorHour + 1) % 24][1]]
         )
 
+    # Initialize list that will hold JSON
+    dwf_json = []
+
     # Generate JSON for each connection node
     for i in enumerate(dwf_on_each_node):
 
@@ -119,7 +115,7 @@ def generate_upload_json_for_rain_event(
             for row in dwfFactorPerTimestep
         ]
 
-        data["dwfNode"].append(
+        dwf_json.append(
             {
                 "offset": 0,  # Wat doet offset bij laterals?
                 "values": dwfPerTimeStep,  # multiply second value with nr_of_inhabitants (row[1])
@@ -128,7 +124,8 @@ def generate_upload_json_for_rain_event(
             }
         )
 
-    return data["dwfNode"]
+    print(dwf_json)
+    return dwf_json
 
 
 def get_sec(time_str):
@@ -139,4 +136,4 @@ def get_sec(time_str):
 
 generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
 
-print(data["dwfNode"])
+
