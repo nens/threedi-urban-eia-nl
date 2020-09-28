@@ -23,7 +23,7 @@ dwfPerNode = []
 for row in c.execute(
     "WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id"
 ):
-    dwfPerNode.append([row[0], row[1] * dwfPerPerson])
+    dwfPerNode.append([row[0], row[1] * dwfPerPerson / 3600])
 
 # print(dwfPerNode)
 
@@ -124,8 +124,8 @@ def generate_upload_json_for_rain_event(
             }
         )
 
-    print(dwf_json)
-    return dwf_json
+    print(json.dumps(dwf_json,indent=4))
+    return (dwf_json)
 
 
 def get_sec(time_str):
@@ -134,6 +134,7 @@ def get_sec(time_str):
     return int(m) * 60 + int(s)
 
 
-generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
+data = generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
 
-
+with open(os.path.join(baseDir,'data.json'), 'w') as f:
+    json.dump(data, f, indent=4)
