@@ -2,6 +2,7 @@ import os
 
 from openapi_client.api import ThreedimodelsApi
 from batch_calculator.read_rainfall_events import RainEventReader
+from batch_calculator.AddDWF import generate_upload_json_for_rain_event
 from batch_calculator.StartSimulation import StartSimulation
 from batch_calculator.DownloadResults import DownloadResults
 

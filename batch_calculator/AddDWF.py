@@ -5,30 +5,35 @@ import json
 from datetime import datetime
 
 # Constants
-# DWF per person = 120 l/inhabitant / 1000 = 0.12 m3/inhabitant
-dwfPerPerson = 0.12
+
 
 # Functie maken met aantal inwoners + starttijd + duration
 baseDir = "C:/Users/Wout.Lexmond/notebooks/reeksberekeningen"
 sqliteName = "loon.sqlite"
 sqlitePath = os.path.join(baseDir, sqliteName)
 
-conn = sqlite3.connect(sqlitePath)
-c = conn.cursor()
 
-# Create empty list that holds dry weather flow per node
-dwfPerNode = []
 
-# Create a table that contains nr_of_inhabitants per connection_node and iterate over it
-for row in c.execute(
-    "WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id"
-):
-    dwfPerNode.append([row[0], row[1] * dwfPerPerson / 3600])
+def read_inhab_per_node(spatialite_path):
+    conn = sqlite3.connect(spatialite_path)
+    c = conn.cursor()
 
-# print(dwfPerNode)
+    # DWF per person = 120 l/inhabitant / 1000 = 0.12 m3/inhabitant
+    dwfPerPerson = 0.12
 
-# Close connection with spatialite
-conn.close()
+    # Create empty list that holds dry weather flow per node
+    dwfPerNode = []
+
+    # Create a table that contains nr_of_inhabitants per connection_node and iterate over it
+    for row in c.execute(
+        "WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id"
+    ):
+        dwfPerNode.append([row[0], row[1] * dwfPerPerson / 3600])
+
+    # Close connection with spatialite
+    conn.close()
+
+    return dwfPerNode
 
 # Create a list that holds all the dry weather flow percentages (factors). Source: Module C2100 Leidraad Riolering
 dwfFactors = [
@@ -117,14 +122,14 @@ def generate_upload_json_for_rain_event(
 
         dwf_json.append(
             {
-                "offset": 0,  # Wat doet offset bij laterals?
-                "values": dwfPerTimeStep,  # multiply second value with nr_of_inhabitants (row[1])
+                "offset": 0,
+                "values": dwfPerTimeStep,
                 "units": "m3/s",
-                "connection_node": dwf_on_each_node[i[0]][0],  # Might be i-1 or i+1
+                "connection_node": dwf_on_each_node[i[0]][0],
             }
         )
 
-    print(json.dumps(dwf_json,indent=4))
+    # print(json.dumps(dwf_json,indent=4))
     return (dwf_json)
 
 
