@@ -52,6 +52,7 @@ def run_batch_calculator(**kwargs):
         results_dir=kwargs.get("results_dir"),
         ini_2d_water_level_constant=kwargs.get("ini_2d_water_level_constant"),
         ini_2d_water_level_raster_url=kwargs.get("ini_2d_water_level_raster_url"),
+        sqlite_path=kwargs.get("sqlite_path"),
         saved_state_url=kwargs.get("saved_state_url"),
     )
 
@@ -97,6 +98,11 @@ def get_parser():
         "rain_files_dir",
         metavar="RAIN_FILES_DIR",
         help="The directory in which all the rain files are located",
+    )
+    parser.add_argument(
+        "sqlite_path",
+        metavar="SQLITE",
+        help="The path to the model sqlite",
     )
     parser.add_argument(
         "results_dir",
