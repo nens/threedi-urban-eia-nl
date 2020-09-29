@@ -139,7 +139,7 @@ def get_sec(time_str):
     return int(m) * 60 + int(s)
 
 
-data = generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
+# data = generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
 
 with open(os.path.join(baseDir,'data.json'), 'w') as f:
     json.dump(data, f, indent=4)
