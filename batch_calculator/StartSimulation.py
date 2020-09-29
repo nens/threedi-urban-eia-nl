@@ -3,6 +3,7 @@ import logging
 
 from openapi_client import SimulationsApi
 from openapi_client.models.simulation import Simulation
+from batch_calculator.AddDWF import generate_upload_json_for_rain_event
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class StartSimulation:
         organisation_id,
         duration,
         rain_event,
+        dwf_per_node_24h,
         ini_2d_water_level_constant=None,
         ini_2d_water_level_raster_url=None,
         saved_state_url=None,
@@ -32,6 +34,7 @@ class StartSimulation:
         self.duration = duration
         self.ini_2d_water_level_constant = ini_2d_water_level_constant
         self.ini_2d_water_level_raster_url = ini_2d_water_level_raster_url
+        self.dwf_per_node_24h = dwf_per_node_24h
 
         my_sim = Simulation(
             name=self.sim_name,
@@ -46,6 +49,10 @@ class StartSimulation:
         self.sim_id_value = str(self.created_sim_id)
 
         print("curr_sim_id: " + self.sim_id_value)
+
+        # Add dry weather flow laterals
+        if dwf_per_node_24h is not None:
+            dwf_json = generate_upload_json_for_rain_event(dwf_per_node_24h,rain_event.start_time,rain_event.duration)
 
         # Add initial saved state
         if saved_state_url is not None:

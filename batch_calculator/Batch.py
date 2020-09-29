@@ -2,10 +2,7 @@ import os
 
 from openapi_client.api import ThreedimodelsApi
 from batch_calculator.read_rainfall_events import RainEventReader
-from batch_calculator.AddDWF import (
-    read_dwf_per_node,
-    generate_upload_json_for_rain_event,
-)
+from batch_calculator.AddDWF import read_dwf_per_node
 from batch_calculator.StartSimulation import StartSimulation
 from batch_calculator.DownloadResults import DownloadResults
 
@@ -52,8 +49,10 @@ class Batch:
                 .url
             )
 
-        # Get total amount of dry weather flow per node per 24h
-        dwf_per_node_24h = read_dwf_per_node(self.sqlite_path)
+        # Get total amount of dry weather flow per node per 24h if sqlite is given
+        dwf_per_node_24h = None
+        if self.sqlite_path is not None:
+            dwf_per_node_24h = read_dwf_per_node(self.sqlite_path)
 
         # "https://api.3di.live/v3.0/threedimodels/7101/initial_waterlevels/476/"
 
@@ -69,6 +68,7 @@ class Batch:
                 self.org_id,
                 rain_event.duration,
                 rain_event,
+                dwf_per_node_24h,
                 self.ini_2d_water_level_constant,
                 self.ini_2d_water_level_raster_url,
                 self.saved_state_url,
