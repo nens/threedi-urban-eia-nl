@@ -13,7 +13,6 @@ sqliteName = "loon.sqlite"
 sqlitePath = os.path.join(baseDir, sqliteName)
 
 
-
 def read_dwf_per_node(spatialite_path):
     conn = sqlite3.connect(spatialite_path)
     c = conn.cursor()
@@ -34,6 +33,7 @@ def read_dwf_per_node(spatialite_path):
     conn.close()
 
     return dwfPerNode24h
+
 
 # Create a list that holds all the dry weather flow percentages (factors). Source: Module C2100 Leidraad Riolering
 dwfFactors = [
@@ -116,8 +116,7 @@ def generate_upload_json_for_rain_event(
 
         # print(dwf_on_each_node[i[0]][1])
         dwfPerTimeStep = [
-            [row[0], row[1] * dwf_on_each_node[i[0]][1]]
-            for row in dwfFactorPerTimestep
+            [row[0], row[1] * dwf_on_each_node[i[0]][1]] for row in dwfFactorPerTimestep
         ]
 
         dwf_json.append(
@@ -130,7 +129,7 @@ def generate_upload_json_for_rain_event(
         )
 
     # print(json.dumps(dwf_json,indent=4))
-    return (dwf_json)
+    return dwf_json
 
 
 def get_sec(time_str):
@@ -141,5 +140,5 @@ def get_sec(time_str):
 
 # data = generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
 
-with open(os.path.join(baseDir,'data.json'), 'w') as f:
+with open(os.path.join(baseDir, "data.json"), "w") as f:
     json.dump(data, f, indent=4)

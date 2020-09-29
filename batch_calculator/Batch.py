@@ -2,7 +2,10 @@ import os
 
 from openapi_client.api import ThreedimodelsApi
 from batch_calculator.read_rainfall_events import RainEventReader
-from batch_calculator.AddDWF import read_dwf_per_node, generate_upload_json_for_rain_event
+from batch_calculator.AddDWF import (
+    read_dwf_per_node,
+    generate_upload_json_for_rain_event,
+)
 from batch_calculator.StartSimulation import StartSimulation
 from batch_calculator.DownloadResults import DownloadResults
 
@@ -48,7 +51,7 @@ class Batch:
                 .results[0]
                 .url
             )
-        
+
         # Get total amount of dry weather flow per node per 24h
         dwf_per_node_24h = read_dwf_per_node(self.sqlite_path)
 

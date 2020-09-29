@@ -75,10 +75,7 @@ class RainEventReader:
 
         # Convert from [mm/timestep] to [m/s]
         timeseries_conv = [
-            [
-                element[0] * 60,
-                element[1] / (timesteps[i] * 1000) / 60,
-            ]
+            [element[0] * 60, element[1] / (timesteps[i] * 1000) / 60,]
             for i, element in enumerate(timeseries[0:-1])
         ]
 
