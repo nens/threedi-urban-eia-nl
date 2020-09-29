@@ -78,7 +78,7 @@ class RainEventReader:
             [
                 element[0] * 60,
                 element[1] / (timesteps[i] * 1000) / 60,
-            ]  # removed 60 behind timesteps[i], since it seems like it is [m/min]
+            ]
             for i, element in enumerate(timeseries[0:-1])
         ]
 
