@@ -100,12 +100,12 @@ def get_parser():
         help="The directory in which all the rain files are located",
     )
     parser.add_argument(
-        "sqlite_path", metavar="SQLITE", help="The path to the model sqlite",
-    )
-    parser.add_argument(
         "results_dir",
         metavar="RESULTS_DIR",
         help="The directory in which all downloaded results will be stored",
+    )
+    parser.add_argument(
+        "--sqlite_path", metavar="SQLITE_PATH", help="The path to the model sqlite",
     )
     parser.add_argument(
         "--ini_2d_water_level_constant",

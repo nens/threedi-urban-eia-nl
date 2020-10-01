@@ -52,7 +52,16 @@ class StartSimulation:
 
         # Add dry weather flow laterals
         if dwf_per_node_24h is not None:
-            dwf_json = generate_upload_json_for_rain_event(dwf_per_node_24h,rain_event.start_time,rain_event.duration)
+            dwf_json = generate_upload_json_for_rain_event(
+                dwf_per_node_24h, rain_event.start_time, rain_event.duration
+            )
+            print("DWF JSON:")
+            print(dwf_json)
+            print("Adding 1d DWF laterals...")
+            for lateral in dwf_json:
+                self._sim.simulations_events_lateral_timeseries_create(
+                    self.created_sim_id, lateral
+                )
 
         # Add initial saved state
         if saved_state_url is not None:

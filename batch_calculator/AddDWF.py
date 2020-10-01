@@ -32,6 +32,8 @@ def read_dwf_per_node(spatialite_path):
     # Close connection with spatialite
     conn.close()
 
+    print("DWF PER NODE:")
+    print(dwfPerNode24h)
     return dwfPerNode24h
 
 
@@ -81,11 +83,11 @@ def generate_upload_json_for_rain_event(
 
     # Calculate the seconds remaining
     remaining_seconds = rain_event_duration - secs_in_first_hour
-    print(remaining_seconds)
+
+    # Calculate the whole hours remaining
     remaining_hours = remaining_seconds // 3600
-    print(remaining_hours)
+
     secs_in_last_hour = remaining_seconds % 3600
-    print(secs_in_last_hour)
 
     # Create a list that will hold the dwf factor for each timestep of the 1D lateral and fill with the first two timesteps
     dwfFactorPerTimestep = [
@@ -93,12 +95,12 @@ def generate_upload_json_for_rain_event(
         [secs_in_first_hour, dwfFactors[(starting_hour + 1) % 24][1]],
     ]
 
-    number_of_whole_hours = list(range(remaining_hours))
+    number_of_whole_hours = list(range(1, remaining_hours + 1))
     print(number_of_whole_hours)
     # Loop over the remaining whole hours and append the new timesteps and their corresponding dwf factors
     for h in number_of_whole_hours:
         new_timestep = dwfFactorPerTimestep[-1][0] + 3600
-        newFactorHour = starting_hour + h + 2
+        newFactorHour = starting_hour + h + 1
         new_factor = dwfFactors[newFactorHour % 24][1]
         dwfFactorPerTimestep.append([new_timestep, new_factor])
 
@@ -138,7 +140,8 @@ def get_sec(time_str):
     return int(m) * 60 + int(s)
 
 
-# data = generate_upload_json_for_rain_event(dwfPerNode, "00:10:00", 14400)
+# dwfPerNode24h = read_dwf_per_node(sqlitePath)
+# data = generate_upload_json_for_rain_event(dwfPerNode24h, "00:10:00", 14400)
 
-with open(os.path.join(baseDir, "data.json"), "w") as f:
-    json.dump(data, f, indent=4)
+# with open(os.path.join(baseDir, "data.json"), "w") as f:
+#     json.dump(data, f, indent=4)
