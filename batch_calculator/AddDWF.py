@@ -25,7 +25,7 @@ def read_dwf_per_node(spatialite_path):
 
     # Create a table that contains nr_of_inhabitants per connection_node and iterate over it
     for row in c.execute(
-        "WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants * impmap.percentage / 100.0, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id"
+        "WITH inhibs_per_node AS (SELECT impsurf.id, impsurf.nr_of_inhabitants * impmap.percentage / 100.0 AS nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY connection_node_id"
     ):
         dwfPerNode24h.append([row[0], row[1] * dwfPerPerson / 3600])
         print(row)
