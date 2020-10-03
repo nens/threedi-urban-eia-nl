@@ -23,20 +23,19 @@ def read_dwf_per_node(spatialite_path):
     # Create empty list that holds total 24h dry weather flow per node
     dwfPerNode24h = []
 
-    # for line in c.execute(
-    #     "SELECT impsurf.id, impsurf.nr_of_inhabitants AS nr_of_inhabitants, impmap.connection_node_id --impmap.percentage / 100.0 FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id"
-    # ):
-    #     print(line)
     cnt = 0
     # Create a table that contains nr_of_inhabitants per connection_node and iterate over it
     for row in c.execute(
         "WITH imp_surface_count AS ( SELECT impsurf.id, impsurf.nr_of_inhabitants / COUNT(impmap.impervious_surface_id) AS nr_of_inhabitants FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id GROUP BY impsurf.id), inhibs_per_node AS ( SELECT impmap.impervious_surface_id, impsurfcount.nr_of_inhabitants, impmap.connection_node_id FROM imp_surface_count impsurfcount, v2_impervious_surface_map impmap WHERE impsurfcount.id = impmap.impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) FROM inhibs_per_node ipn GROUP BY ipn.connection_node_id"
-    ): #  * impmap.percentage / 100.0 AS nr_of_inhabitants
+    ):
         dwfPerNode24h.append([row[0], row[1] * dwfPerPerson / 3600])
-        # print(row)
+
         cnt += row[1]
-    #         "WITH inhibs_per_node AS (SELECT impmap.impervious_surface_id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id), imp_surface_count AS (SELECT impervious_surface_id, COUNT(*) AS cnt FROM inhibs_per_node GROUP BY impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) / isc.cnt FROM inhibs_per_node ipn, imp_surface_count isc WHERE ipn.impervious_surface_id = isc.impervious_surface_id GROUP BY ipn.connection_node_id"
-    print("DWF of:",cnt,"inhabitants")
+    #  OLD QUERY:       "WITH inhibs_per_node AS (SELECT impmap.impervious_surface_id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id), imp_surface_count AS (SELECT impervious_surface_id, COUNT(*) AS cnt FROM inhibs_per_node GROUP BY impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) / isc.cnt FROM inhibs_per_node ipn, imp_surface_count isc WHERE ipn.impervious_surface_id = isc.impervious_surface_id GROUP BY ipn.connection_node_id"
+
+    # Print the number of inhabitants
+    print("DWF of:", cnt, "inhabitants")
+
     # Close connection with spatialite
     conn.close()
 
