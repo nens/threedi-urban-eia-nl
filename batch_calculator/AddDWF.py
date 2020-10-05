@@ -4,16 +4,14 @@ import json
 
 from datetime import datetime
 
-# Constants
-
-
 # Functie maken met aantal inwoners + starttijd + duration
-baseDir = "C:/Users/Wout.Lexmond/notebooks/reeksberekeningen"
-sqliteName = "loon.sqlite"
-sqlitePath = os.path.join(baseDir, sqliteName)
+# baseDir = "C:/Users/Wout.Lexmond/notebooks/reeksberekeningen"
+# sqliteName = "loon.sqlite"
+# sqlitePath = os.path.join(baseDir, sqliteName)
 
 
 def read_dwf_per_node(spatialite_path):
+    """Obtains the 24h dry weather flow per connection node from the a 3Di model sqlite-file."""
     conn = sqlite3.connect(spatialite_path)
     c = conn.cursor()
 
