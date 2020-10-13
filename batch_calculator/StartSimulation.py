@@ -55,8 +55,8 @@ class StartSimulation:
             dwf_json = generate_upload_json_for_rain_event(
                 dwf_per_node_24h, rain_event.start_time, rain_event.duration
             )
-            print("DWF JSON:")
-            print(dwf_json)
+            # print("DWF JSON:")
+            # print(dwf_json)
             print("Adding 1d DWF laterals...")
             for lateral in dwf_json:
                 self._sim.simulations_events_lateral_timeseries_create(
