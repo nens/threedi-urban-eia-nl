@@ -101,6 +101,8 @@ class StartSimulation:
                 "Using the following 2d waterlevel raster:",
                 self.ini_2d_water_level_raster_url,
             )
+        else:
+            print("Couldn't find a 2d waterlevel raster")
 
         # Add constant global 2D waterlevel if no 2D waterlevel raster has been provided
         if (

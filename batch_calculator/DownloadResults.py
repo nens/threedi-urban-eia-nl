@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 
 from openapi_client import SimulationsApi
 from openapi_client.api import ThreedimodelsApi
@@ -17,6 +18,13 @@ class DownloadResults:
         self.agg_dir = os.path.join(self.output_dir, "aggregation_netcdfs")
 
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+
+        # Wait until the results have been uploaded
+        while sim_results == []:
+            sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+            print("Waiting for result files to be uploaded")
+            time.sleep(5.0)
+
         result_dir = os.path.join(self.output_dir, "simulation-" + str(self.sim_id))
 
         if not os.path.exists(result_dir):
