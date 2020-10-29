@@ -1,5 +1,6 @@
-import time
 import logging
+import time
+import requests
 
 from openapi_client import SimulationsApi
 from openapi_client.models.simulation import Simulation
@@ -50,18 +51,30 @@ class StartSimulation:
 
         print("curr_sim_id: " + self.sim_id_value)
 
-        # Add dry weather flow laterals
+        # Add dry weather flow (dwf) laterals
         if dwf_per_node_24h is not None:
             dwf_json = generate_upload_json_for_rain_event(
                 dwf_per_node_24h, rain_event.start_time, rain_event.duration
             )
-            # print("DWF JSON:")
-            # print(dwf_json)
-            print("Adding 1d DWF laterals...")
-            for lateral in dwf_json:
-                self._sim.simulations_events_lateral_timeseries_create(
-                    self.created_sim_id, lateral
-                )
+
+            # print("Uploading DWF JSON")
+            dwf_upload = self._sim.simulations_events_lateral_file_create(
+                self.created_sim_id, {"filename": "dwf_sim_" + self.sim_id_value, "offset": 0}
+            )
+
+            # # Open the local file in binary mode for uploading
+            # with open(local_file_path, 'rb') as f: 
+            #     # Requests automatically streams the file this way
+            #     requests.put(dwf_upload.put_url, data=f)
+
+            requests.put(dwf_upload.put_url, data=dwf_json)
+            
+            dwf_file_results = self._sim.simulations_events_lateral_file_list(self.created_sim_id).results
+            # Check if dwf file is uploaded
+            while dwf_file_results == []:
+                print("Waiting for dwf-file to be uploaded")
+                time.sleep(5.0)
+            print("Using the following dwf-file:", dwf_file_results[0].url)
 
         # Add initial saved state
         if saved_state_url is not None:

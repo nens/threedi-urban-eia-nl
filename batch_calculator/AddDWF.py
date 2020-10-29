@@ -116,7 +116,7 @@ def generate_upload_json_for_rain_event(
         )
 
     # Initialize list that will hold JSON
-    dwf_json = []
+    dwf_list = []
 
     # Generate JSON for each connection node
     for i in enumerate(dwf_on_each_node):
@@ -126,17 +126,17 @@ def generate_upload_json_for_rain_event(
             [row[0], row[1] * dwf_on_each_node[i[0]][1]] for row in dwfFactorPerTimestep
         ]
 
-        dwf_json.append(
+        dwf_list.append(
             {
                 "offset": 0,
-                "values": dwfPerTimeStep,
                 "interpolate": 0,
+                "values": dwfPerTimeStep,
                 "units": "m3/s",
                 "connection_node": dwf_on_each_node[i[0]][0],
             }
         )
 
-    # print(json.dumps(dwf_json,indent=4))
+    dwf_json = json.dumps(dwf_list,indent=4)
     return dwf_json
 
 
