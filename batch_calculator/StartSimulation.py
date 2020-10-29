@@ -59,9 +59,11 @@ class StartSimulation:
             # print(dwf_json)
             print("Adding 1d DWF laterals...")
             for lateral in dwf_json:
-                self._sim.simulations_events_lateral_timeseries_create(
+                lateral_response = self._sim.simulations_events_lateral_timeseries_create(
                     self.created_sim_id, lateral
                 )
+                print(lateral_response)
+                # while lateral_response.state_detail ==
 
         # Add initial saved state
         if saved_state_url is not None:
