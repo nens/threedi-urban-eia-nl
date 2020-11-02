@@ -10,7 +10,7 @@ install_requires = [
     "jwt",
     "requests",
     "pandas",
-    "threedi-api-client",
+    "threedi-api-client>=3.0.15",
     "threedigrid==1.0.16",
 ]
 

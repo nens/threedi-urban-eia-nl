@@ -136,7 +136,8 @@ def generate_upload_json_for_rain_event(
             }
         )
 
-    dwf_json = json.dumps(dwf_list,indent=4)
+    dwf_json = json.dumps(dwf_list)
+    # dwf_json = json.dumps(dwf_list,indent=4)
     return dwf_json
 
 
