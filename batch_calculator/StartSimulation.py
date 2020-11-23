@@ -76,6 +76,16 @@ class StartSimulation:
                 time.sleep(5.0)
             print("Using the following dwf-file:", dwf_file_results[0].url)
 
+            file_lateral = self._sim.simulations_events_lateral_file_list(self.created_sim_id).results[0]
+            while file_lateral.state == 'processing':
+                time.sleep(5)
+                file_lateral = self._sim.simulations_events_lateral_file_read(
+                    id=file_lateral.id, simulation_pk=sim.id
+                )
+            if file_lateral.state != 'valid':
+                raise ValueError(f"Something went wrong during validation of file-lateral {file_lateral.id}")
+
+
         # Add initial saved state
         if saved_state_url is not None:
             self._sim.simulations_initial_saved_state_create(
