@@ -6,7 +6,6 @@ long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").r
 
 install_requires = [
     "h5py",
-    "json",
     "jwt",
     "requests",
     "pandas",
