@@ -57,34 +57,29 @@ class StartSimulation:
                 dwf_per_node_24h, rain_event.start_time, rain_event.duration
             )
 
-            # print("Uploading DWF JSON")
+            # Create lateral upload instance
             dwf_upload = self._sim.simulations_events_lateral_file_create(
-                self.created_sim_id, {"filename": "dwf_sim_" + self.sim_id_value, "offset": 0}
+                self.created_sim_id,
+                {"filename": "dwf_sim_" + self.sim_id_value, "offset": 0},
             )
 
-            # # Open the local file in binary mode for uploading
-            # with open(local_file_path, 'rb') as f: 
-            #     # Requests automatically streams the file this way
-            #     requests.put(dwf_upload.put_url, data=f)
-
+            # Upload dwf_json to lateral instance
             requests.put(dwf_upload.put_url, data=dwf_json)
-            
-            dwf_file_results = self._sim.simulations_events_lateral_file_list(self.created_sim_id).results
-            # Check if dwf file is uploaded
-            while dwf_file_results == []:
-                print("Waiting for dwf-file to be uploaded")
-                time.sleep(5.0)
-            print("Using the following dwf-file:", dwf_file_results[0].url)
 
-            file_lateral = self._sim.simulations_events_lateral_file_list(self.created_sim_id).results[0]
-            while file_lateral.state == 'processing':
+            # Check if dwf file is uploaded
+            print("Waiting for DWF file to be uploaded and validated...")
+            file_lateral = self._sim.simulations_events_lateral_file_list(
+                self.created_sim_id
+            ).results[0]
+            while file_lateral.state == "processing":
                 time.sleep(5)
                 file_lateral = self._sim.simulations_events_lateral_file_read(
-                    id=file_lateral.id, simulation_pk=sim.id
+                    id=file_lateral.id, simulation_pk=self.created_sim_id
                 )
-            if file_lateral.state != 'valid':
-                raise ValueError(f"Something went wrong during validation of file-lateral {file_lateral.id}")
-
+            if file_lateral.state != "valid":
+                raise ValueError(
+                    f"Something went wrong during validation of file-lateral {file_lateral.id}"
+                )
 
         # Add initial saved state
         if saved_state_url is not None:
