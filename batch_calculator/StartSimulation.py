@@ -123,9 +123,7 @@ class StartSimulation:
             print("Couldn't find a 2d waterlevel raster")
 
         # Add constant global 2D waterlevel if no 2D waterlevel raster has been provided
-        if (
-            self.ini_2d_water_level_raster_url is None
-        ):
+        if self.ini_2d_water_level_raster_url is None:
             self._sim.simulations_initial2d_water_level_constant_create(
                 self.created_sim_id, {"value": self.ini_2d_water_level_constant},
             )
@@ -160,7 +158,9 @@ class StartSimulation:
         # Print the status of the simulation while it is not yet initialized
         status = self._sim.simulations_status_list(self.created_sim_id, async_req=False)
         print(status.name, end="\r", flush=True)
-        while status.name != "initialized": #old code: status.name == "queued" or status.name == "starting":
+        while (
+            status.name != "initialized"
+        ):  # old code: status.name == "queued" or status.name == "starting":
             print(status.name, end="\r", flush=True)
             status = self._sim.simulations_status_list(
                 self.created_sim_id, async_req=False
@@ -168,9 +168,7 @@ class StartSimulation:
             time.sleep(5.0)
         print(status.name)
 
-        self._sim.simulations_progress_list(
-            self.created_sim_id, async_req=False
-        )
+        self._sim.simulations_progress_list(self.created_sim_id, async_req=False)
 
         # Required, otherwise DownloadResults tries downloading while simulation is still running
         # Sometimes gets stuck

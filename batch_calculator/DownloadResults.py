@@ -17,22 +17,16 @@ class DownloadResults:
         self.output_dir = output_dir
         self.agg_dir = os.path.join(self.output_dir, "aggregation_netcdfs")
 
-        sim_results = self._sims.simulations_results_files_list(self.sim_id).results
-
-        # Wait until the results have been uploaded
-        while sim_results == []:
-            sim_results = self._sims.simulations_results_files_list(self.sim_id).results
-            print("Waiting for result files to be uploaded")
-            time.sleep(5.0)
-
         result_dir = os.path.join(self.output_dir, "simulation-" + str(self.sim_id))
 
+        # Create directories that will store results and aggregation results if they do not exist yet
         if not os.path.exists(result_dir):
             os.mkdir(result_dir)
 
         if not os.path.exists(self.agg_dir):
             os.mkdir(self.agg_dir)
 
+        # Download gridadmin.h5
         if not os.path.exists(os.path.join(self.agg_dir, "gridadmin.h5")):
             gridadmin = self._threedi_models.threedimodels_gridadmin_download(
                 self.model_id, async_req=False
@@ -42,6 +36,19 @@ class DownloadResults:
             )
             print("Created new gridadmin.h5")
 
+        sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+
+        # Wait until the results have been uploaded
+        while sim_results == [] or (
+            sim_results[0].file.state != "uploaded"
+            and sim_results[1].file.state != "uploaded"
+            and sim_results[2].file.state != "uploaded"
+        ):
+            sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+            print("Waiting for result files to be uploaded")
+            time.sleep(5.0)
+
+        # Download aggregate results netcdf, results netcdf and logfiles
         for result in sim_results:
             download = self._sims.simulations_results_files_download(
                 result.id, self.sim_id
@@ -70,7 +77,3 @@ class DownloadResults:
     def append_id(self, filename):
         name, ext = os.path.splitext(filename)
         return "{name}_sim_{uid}{ext}".format(name=name, uid=str(self.sim_id), ext=ext)
-
-    # def get_agg_dir(self):
-
-    #     return self.agg_dir
