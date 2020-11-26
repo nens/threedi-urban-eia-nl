@@ -80,6 +80,7 @@ class StartSimulation:
                 raise ValueError(
                     f"Something went wrong during validation of file-lateral {file_lateral.id}"
                 )
+            print("Using DWF lateral file:", file_lateral.url)
 
         # Add initial saved state
         if saved_state_url is not None:
@@ -89,9 +90,19 @@ class StartSimulation:
             print("Using savedstate url: ", self.saved_state_url)
 
         # Create a rain timeseries
-        self._sim.simulations_events_rain_timeseries_create(
+        rain_upload = self._sim.simulations_events_rain_timeseries_create(
             self.created_sim_id, rain_event.rain_data
         )
+        print("Using rain timeseries:", rain_upload.url)
+
+        # Check if a rain timeseries has been uploaded to the simulation (don't know yet how to check for the specific timeseries we just added)
+        while (
+            self._sim.simulations_events_rain_timeseries_list(
+                self.created_sim_id
+            ).results
+            == []
+        ):
+            time.sleep(5)
 
         # # Create a timed save state at the end of the simulation duration
         # self._sim.simulations_create_saved_states_timed_create(
@@ -116,8 +127,7 @@ class StartSimulation:
                 },
             )
             print(
-                "Using the following 2d waterlevel raster:",
-                self.ini_2d_water_level_raster_url,
+                "Using 2d waterlevel raster:", self.ini_2d_water_level_raster_url,
             )
         else:
             print("Couldn't find a 2d waterlevel raster")
@@ -128,7 +138,7 @@ class StartSimulation:
                 self.created_sim_id, {"value": self.ini_2d_water_level_constant},
             )
             print(
-                "Using constant 2d waterlevel of: ",
+                "Using constant 2d waterlevel: ",
                 self.ini_2d_water_level_constant,
                 " mNAP",
             )
