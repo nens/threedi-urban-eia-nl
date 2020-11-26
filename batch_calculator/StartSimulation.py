@@ -125,7 +125,7 @@ class StartSimulation:
         # Add constant global 2D waterlevel if no 2D waterlevel raster has been provided
         if (
             self.ini_2d_water_level_raster_url is None
-        ):  # Removed: 'saved_state_url is None and'
+        ):
             self._sim.simulations_initial2d_water_level_constant_create(
                 self.created_sim_id, {"value": self.ini_2d_water_level_constant},
             )
@@ -153,13 +153,14 @@ class StartSimulation:
             logger.warning("No 2D waterlevel has been provided")
 
         # Start the simulation with id = created_sim_id
-        self._sim.simulations_actions_create(  # TODO sim_start =
+        self._sim.simulations_actions_create(
             simulation_pk=self.created_sim_id, data={"name": "queue"}
         )
 
+        # Print the status of the simulation while it is not yet initialized
         status = self._sim.simulations_status_list(self.created_sim_id, async_req=False)
         print(status.name, end="\r", flush=True)
-        while status.name == "queued" or status.name == "starting":
+        while status.name != "initialized": #old code: status.name == "queued" or status.name == "starting":
             print(status.name, end="\r", flush=True)
             status = self._sim.simulations_status_list(
                 self.created_sim_id, async_req=False
@@ -167,7 +168,7 @@ class StartSimulation:
             time.sleep(5.0)
         print(status.name)
 
-        self._sim.simulations_progress_list(  # TODO progress =
+        self._sim.simulations_progress_list(
             self.created_sim_id, async_req=False
         )
 

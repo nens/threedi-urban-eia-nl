@@ -50,7 +50,7 @@ class RainEventReader:
         self.duration = int(self.rain_data["values"][-1][0])
 
     def parse_rain_timeseries(self):
-        # This function parses 3Di-format rain files into the format required by the 3Di API
+        """This function parses 3Di-format rain files into the format required by the 3Di API"""
 
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
@@ -84,7 +84,3 @@ class RainEventReader:
 
         rain_data.update(values=timeseries_conv)
         return rain_data
-
-    # def get_timeseries(self):
-
-    #     return timeseries
