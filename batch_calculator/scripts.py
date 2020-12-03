@@ -3,8 +3,6 @@
 import argparse
 import os
 import logging
-import numpy as np
-
 
 from batch_calculator.Batch import Batch
 from batch_calculator.DownloadResults import DownloadResults

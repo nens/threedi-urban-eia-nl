@@ -36,16 +36,25 @@ class DownloadResults:
             )
             print("Created new gridadmin.h5")
 
+        # Wait with downloading simulation-specific results until the simulation status is "finished"
+        while (
+            self._sims.simulations_status_list(self.sim_id, async_req=False)
+            != "finished"
+        ):
+            time.sleep(5.0)
+            print("waiting for simulation status to be set to 'finished'...")
+
+        # Create variable that contains the simulation results
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
 
-        # Wait until the results have been uploaded
+        # Double check whether the results have been uploaded
         while sim_results == [] or (
             sim_results[0].file.state != "uploaded"
-            and sim_results[1].file.state != "uploaded"
-            and sim_results[2].file.state != "uploaded"
+            or sim_results[1].file.state != "uploaded"
+            or sim_results[2].file.state != "uploaded"
         ):
             sim_results = self._sims.simulations_results_files_list(self.sim_id).results
-            print("Waiting for result files to be uploaded")
+            print("Waiting for result files to be uploaded...")
             time.sleep(5.0)
 
         # Download aggregate results netcdf, results netcdf and logfiles
@@ -62,9 +71,7 @@ class DownloadResults:
             else:
                 self.write_file_from_url(
                     download.get_url,
-                    os.path.join(
-                        result_dir, self.append_id(result.filename)
-                    ),  # + '_sim-' + str(self.sim_id)
+                    os.path.join(result_dir, self.append_id(result.filename)),
                 )
                 print("Downloaded: ", result.filename)
 
