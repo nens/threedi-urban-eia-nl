@@ -37,12 +37,12 @@ class DownloadResults:
             print("Created new gridadmin.h5")
 
         # Wait with downloading simulation-specific results until the simulation status is "finished"
+        print("Waiting for simulation status to be set to 'finished'...")
         while (
-            self._sims.simulations_status_list(self.sim_id, async_req=False)
+            self._sims.simulations_status_list(self.sim_id, async_req=False).name
             != "finished"
         ):
             time.sleep(5.0)
-            print("waiting for simulation status to be set to 'finished'...")
 
         # Create variable that contains the simulation results
         sim_results = self._sims.simulations_results_files_list(self.sim_id).results
