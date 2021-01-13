@@ -74,21 +74,19 @@ def batch_calculation_statistics(netcdf_dir, gridadmin, nr_years):
 
     nc_files = [file for file in os.listdir(netcdf_dir) if file.endswith(".nc")]
     ga = GridH5AggregateResultAdmin(gridadmin, os.path.join(netcdf_dir, nc_files[0]))
-    weir_pks = ga.lines.filter(content_type="v2_weir").only("content_pk").data
-    results = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks["content_pk"]])
+    
+    weir_pks = ga.lines.weirs.content_pk
+    results = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
 
     for i, aggregate_file in enumerate(nc_files):
         ga = GridH5AggregateResultAdmin(
             gridadmin, os.path.join(netcdf_dir, aggregate_file)
         )
-        weir_data = (
-            ga.lines.filter(content_type="v2_weir")
-            .only("content_pk", "content_type", "q_cum")
-            .timeseries(indexes=slice(None))
-            .data
-        )
-        cumulative_discharge = [x for x in weir_data["q_cum"][-1]]
+        weir_data = ga.lines.filter(content_type="v2_weir").only("content_pk", "content_type", "q_cum")
+     
+        cumulative_discharge = [abs(x) for x in (weir_data.q_cum)[-1]]
         results.loc[i] = [aggregate_file, *cumulative_discharge]
+
 
     # Find results for each weir
     output = pandas.DataFrame(
