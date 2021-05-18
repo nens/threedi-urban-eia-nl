@@ -118,7 +118,7 @@ class StartSimulation:
         # 2.    Met logging terugggeven
 
         # Add 2D waterlevel raster if available
-        if self.ini_2d_water_level_raster_url is not None:
+        if self.ini_2d_water_level_raster_url is not None and saved_state_url is None: # saved state conflicts with 2d constant water level:
             self._sim.simulations_initial2d_water_level_raster_create(
                 self.created_sim_id,
                 {
