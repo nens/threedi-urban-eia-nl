@@ -133,7 +133,7 @@ class StartSimulation:
             print("Couldn't find a 2d waterlevel raster")
 
         # Add constant global 2D waterlevel if no 2D waterlevel raster has been provided
-        if self.ini_2d_water_level_raster_url is None:
+        if self.ini_2d_water_level_raster_url is None and saved_state_url is None: # saved state conflicts with 2d constant water level
             self._sim.simulations_initial2d_water_level_constant_create(
                 self.created_sim_id, {"value": self.ini_2d_water_level_constant},
             )
