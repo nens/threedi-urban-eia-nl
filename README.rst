@@ -19,7 +19,9 @@ For installation on the utr-con-task-01.nens.local use this (you need administra
 
 #. Then copy the batch-calculator to the root directory of the linux-machine:
   $ sudo su
+  
   $ rm /root/batch-calculator
+  
   $ cp /mnt/workdir/A_vtVeld/batch-calculator /root/ -r
   
 #. Then install or upgrade the batch-calculator through a local installation procedure:
