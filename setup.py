@@ -10,7 +10,7 @@ install_requires = [
     "requests",
     "pandas",
     "threedi-api-client>=3.0.15",
-    "threedigrid==1.0.16",
+    "threedigrid>=1.0.16", #trial on 30-6-2021 this was first only version 1.0.16 of threedigrid, but this makes it complex to use with other software
 ]
 
 tests_require = [
