@@ -20,7 +20,7 @@ class RainEventReader:
             )
             print("start_date = " + str(self.start_date))
         except ValueError as e:
-            print("WARNING:", e)
+            print("Error: ", e)
             print("Using default date => start_date = " + str(self.start_date))
 
         # Default start_time
@@ -34,7 +34,7 @@ class RainEventReader:
             )
             print("start_time = " + str(self.start_time))
         except ValueError as e:
-            print("WARNING:", e)
+            print("Error: ", e)
             print("Using default time => start_time = " + str(self.start_time))
 
         # Combine self.start_date and self.start_time
@@ -46,11 +46,11 @@ class RainEventReader:
 
         self.rain_data = self.parse_rain_timeseries()
 
-        # Set the duration of the simulation to be equal to the last timestamp value
-        self.duration = int(self.rain_data["values"][-1][0])
+        # Set the duration of the simulation to be equal to the last timestamp value and change the value from minutes to seconds
+        self.duration = int(self.rain_data["values"][-1][0] * 60)
 
     def parse_rain_timeseries(self):
-        """This function parses 3Di-format rain files into the format required by the 3Di API"""
+        # This function parses 3Di-format rain files into the format required by the 3Di API
 
         rain_data = {"offset": 0, "interpolate": False, "values": [[0]], "units": "m/s"}
         timeseries = [
@@ -75,12 +75,16 @@ class RainEventReader:
 
         # Convert from [mm/timestep] to [m/s]
         timeseries_conv = [
-            [element[0] * 60, element[1] / (timesteps[i] * 1000) / 60,]
+            [element[0], element[1] / (timesteps[i] * 60 * 1000)]
             for i, element in enumerate(timeseries[0:-1])
         ]
 
         # Append the last element of timeseries to timeseries_conv
-        timeseries_conv.append([timeseries[-1][0] * 60, timeseries[-1][1]])
+        timeseries_conv.append(timeseries[-1])
 
         rain_data.update(values=timeseries_conv)
         return rain_data
+
+    # def get_timeseries(self):
+
+    #     return timeseries
