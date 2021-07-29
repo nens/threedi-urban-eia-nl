@@ -2,68 +2,52 @@ batch-calculator
 ==========================================
 
 Introduction
-
-Usage, etc.
-
+------------
+This tool can be used for reeksberekeningen.
 
 Installation
 ------------
+The easiest way to install the tool is through cloning the repository.
 
-We can be installed with::
+We can also be installed with::
 
   $ pip install batch-calculator
+  
+For installation on the utr-con-task-01.nens.local use this (you need administrator rights for this!):
 
-(TODO: after the first release has been made)
+1. First copy this repository to your workdir on your local machine, so that you can access it on the linux-machine
 
+2. Then copy the batch-calculator to the root directory of the linux-machine::
 
-Development installation of this project itself
------------------------------------------------
+    $ sudo su
+    $ rm -r /root/batch-calculator
+    $ cp /mnt/workdir/A_vtVeld/batch-calculator /root/ -r
 
-We use python's build-in "virtualenv" to get a nice isolated directory. You
-only need to run this once::
+3. Then install or upgrade the batch-calculator through a local installation procedure::
 
-  $ python3 -m venv .
+    $ pip3 install -e /root/batch-calculator --upgrade
+  
+  
+  
+Usage
+-----
 
-A virtualenv puts its commands in the ``bin`` directory. So ``bin/pip``,
-``bin/pytest``, etc. Set up the dependencies like this::
+To ensure the correct behaviour of this tool please go through the following steps:
 
-  $ bin/pip3 install -r requirements.txt
+#. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below::
 
-There will be a script you can run like this::
-
-  $ bin/run-batch-calculator
-
-It runs the `main()` function in `batch-calculator/scripts.py`,
-adjust that if necessary. The script is configured in `setup.py` (see
-`entry_points`).
-
-In order to get nicely formatted python files without having to spend manual
-work on it, run the following command periodically::
-
-  $ bin/black batch_calculator
-
-Run the tests regularly. This also checks with pyflakes, black and it reports
-coverage. Pure luxury::
-
-  $ bin/pytest
-
-The tests are also run automatically `on travis-ci
-<https://travis-ci.com/nens/batch-calculator>`_, you'll see it
-in the pull requests. There's also `coverage reporting
-<https://coveralls.io/github/nens/batch-calculator>`_ on
-coveralls.io (once it has been set up).
-
-If you need a new dependency (like `requests`), add it in `setup.py` in
-`install_requires`. Afterwards, run pip again to actually install your
-dependency::
-
-  $ bin/pip3 install -r requirements.txt
+    0,5.0
+    30,1.5
+    60,0.0
+#. Create an output folder in which the result files will be stored.
+#. If you want to add dry weather flow, download the model sqlite and save it in your project folder.
+#. Find the "id" of your model in the Threedi Model List: https://api.3di.live/v3.0/threedimodels/
+#. Open a command window and navigate to the batch-calculator folder.
+#. Run ``$ python scripts.py -h`` or ``$ run-batch-calculator -h`` to see which arguments you need to specify for your specific case.
 
 
-Steps to do after generating with cookiecutter
-----------------------------------------------
+Example
+-------
+Example command::
 
-- Update this readme. Use `.rst
-  <http://www.sphinx-doc.org/en/stable/rest.html>`_ as the format.
-
-- Remove this section as you've done it all :-)
+  $ run-batch-calculator model_id=12345 rain_files_dir=C:\rain_files results_dir=C:\results sqlite_path=C:\model.sqlite --ini_2d_water_level_constant 0.8
