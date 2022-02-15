@@ -2,16 +2,10 @@ import os
 import requests
 import time
 
-from openapi_client import SimulationsApi
-from openapi_client.api import ThreedimodelsApi
-
 
 class DownloadResults:
     def __init__(self, client, sim_id, model_id, output_dir):
         self._client = client
-        self._sims = SimulationsApi(client)
-        self._threedi_models = ThreedimodelsApi(client)
-
         self.sim_id = sim_id
         self.model_id = model_id
         self.output_dir = output_dir
@@ -28,7 +22,7 @@ class DownloadResults:
 
         # Download gridadmin.h5
         if not os.path.exists(os.path.join(self.agg_dir, "gridadmin.h5")):
-            gridadmin = self._threedi_models.threedimodels_gridadmin_download(
+            gridadmin = self._client.threedimodels_gridadmin_download(
                 self.model_id, async_req=False
             )
             self.write_file_from_url(
@@ -39,13 +33,13 @@ class DownloadResults:
         # Wait with downloading simulation-specific results until the simulation status is "finished"
         print("Waiting for simulation status to be set to 'finished'...")
         while (
-            self._sims.simulations_status_list(self.sim_id, async_req=False).name
+            self._client.simulations_status_list(self.sim_id, async_req=False).name
             != "finished"
         ):
             time.sleep(5.0)
 
         # Create variable that contains the simulation results
-        sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+        sim_results = self._client.simulations_results_files_list(self.sim_id).results
 
         # Double check whether the results have been uploaded
         while sim_results == [] or (
@@ -53,13 +47,13 @@ class DownloadResults:
             or sim_results[1].file.state != "uploaded"
             or sim_results[2].file.state != "uploaded"
         ):
-            sim_results = self._sims.simulations_results_files_list(self.sim_id).results
+            sim_results = self._client.simulations_results_files_list(self.sim_id).results
             print("Waiting for result files to be uploaded...")
             time.sleep(5.0)
 
         # Download aggregate results netcdf, results netcdf and logfiles
         for result in sim_results:
-            download = self._sims.simulations_results_files_download(
+            download = self._client.simulations_results_files_download(
                 result.id, self.sim_id
             )
             if result.filename.startswith("agg"):

@@ -10,8 +10,7 @@ from batch_calculator.batch_calculation_statistics import (
     batch_calculation_statistics,
     repetition_time_volumes,
 )
-from threedi_api_client import ThreediApiClient
-from openapi_client.api import ThreedimodelsApi
+from threedi_api_client import ThreediApi
 from getpass import getpass, getuser
 
 
@@ -27,19 +26,21 @@ def run_batch_calculator(**kwargs):
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
     # Authentication
-    API_HOST = "https://api.3di.live/v3.0"
+    API_HOST = "https://api.3di.live"
     USERNAME = getuser()
     PASSWORD = getpass("Password: ")
-    config = {"API_HOST": API_HOST, "API_USERNAME": USERNAME, "API_PASSWORD": PASSWORD}
-    client = ThreediApiClient(config=config)
+    config = {"THREEDI_API_HOST": API_HOST, 
+              "THREEDI_API_USERNAME": USERNAME, 
+              "THREEDI_API_PASSWORD": PASSWORD}
+    
+    client = ThreediApi(config=config)
 
     # Debugging
-    client.configuration.debug = True
-    print("Debugging is", client.configuration.debug)
+    # client.configuration.debug = True
+    # print("Debugging is", client.configuration.debug)
 
     # Models
-    threedi_models = ThreedimodelsApi(client)
-    model_name = threedi_models.threedimodels_read(kwargs["model_id"]).repository_slug
+    model_name = client.threedimodels_read(kwargs["model_id"]).repository_slug
 
     batch = Batch(
         rain_files_dir=kwargs.get("rain_files_dir"),

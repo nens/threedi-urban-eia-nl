@@ -3,6 +3,8 @@ import os
 
 from datetime import datetime
 
+MAX_LENGTH_RAIN_EVENT = 300
+
 
 class RainEventReader:
     def __init__(self, filepath):
@@ -84,3 +86,9 @@ class RainEventReader:
 
         rain_data.update(values=timeseries_conv)
         return rain_data
+    
+    def batch(self,n=MAX_LENGTH_RAIN_EVENT):
+        l = len(self.rain_data['values'])
+        for ndx in range(0, l, n):
+            yield self.rain_data['values'][ndx:min(ndx + n, l)]
+
