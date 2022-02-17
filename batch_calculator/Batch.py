@@ -60,7 +60,7 @@ class Batch:
             rain_file_path = os.path.join(self.rain_files_dir, filename)
 
             rain_event = RainEventReader(rain_file_path)
-            rain_event_start_datetime = datetime.datetime.fromisoformat(rain_event.start_datetime)
+            rain_event_start_datetime = datetime.datetime.strptime(rain_event.start_datetime, "%Y-%m-%dT%H:%M:%S")
             
             rain_event_length = len(rain_event.rain_data['values'])
             saved_state = self.saved_state_url
