@@ -4,6 +4,7 @@
 *.swp
 *.pyc
 
+batch_calculator/huidig
 # Packages/buildout/pip/pipenv
 *.egg
 *.egg-info

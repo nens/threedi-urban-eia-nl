@@ -32,7 +32,7 @@ def read_dwf_per_node(spatialite_path):
     #  OLD QUERY:       "WITH inhibs_per_node AS (SELECT impmap.impervious_surface_id, impsurf.nr_of_inhabitants, impmap.connection_node_id FROM v2_impervious_surface impsurf, v2_impervious_surface_map impmap WHERE impsurf.nr_of_inhabitants IS NOT NULL AND impsurf.nr_of_inhabitants != 0 AND impsurf.id = impmap.impervious_surface_id), imp_surface_count AS (SELECT impervious_surface_id, COUNT(*) AS cnt FROM inhibs_per_node GROUP BY impervious_surface_id) SELECT ipn.connection_node_id, SUM(ipn.nr_of_inhabitants) / isc.cnt FROM inhibs_per_node ipn, imp_surface_count isc WHERE ipn.impervious_surface_id = isc.impervious_surface_id GROUP BY ipn.connection_node_id"
 
     # Print the number of inhabitants
-    print("DWF of:", cnt, "inhabitants")
+    #print("DWF of:", cnt, "inhabitants")
 
     # Close connection with spatialite
     conn.close()

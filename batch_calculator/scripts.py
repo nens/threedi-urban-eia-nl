@@ -33,7 +33,7 @@ def run_batch_calculator(**kwargs):
               "THREEDI_API_USERNAME": USERNAME, 
               "THREEDI_API_PASSWORD": PASSWORD}
     
-    client = ThreediApi(config=config)
+    client = ThreediApi(config=config, version='v3-beta')
 
     # Debugging
     # client.configuration.debug = True
@@ -55,8 +55,9 @@ def run_batch_calculator(**kwargs):
         saved_state_url=kwargs.get("saved_state_url"),
     )
 
+    batch.run_batch()
     # Reeksberekeningen statistics (script Emile)
-    nc_dir = batch.agg_dir
+    nc_dir = batch.results_dir
     gridadmin = os.path.join(nc_dir, "gridadmin.h5")
     nr_years = int(kwargs["nr_years"])
 
