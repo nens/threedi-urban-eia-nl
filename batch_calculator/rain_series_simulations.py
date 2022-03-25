@@ -1,14 +1,11 @@
 import click
-import h5py
 import numpy as np
 import json
 import os
 import shutil
-import urllib
 import pytz
 import netCDF4 as nc4
 
-from batch_calculator.batch_calculation_statistics import batch_calculation_statistics
 from datetime import datetime
 from pathlib import Path
 from threedi_api_client import ThreediApi
@@ -427,88 +424,6 @@ def create_result_file(
         json.dump(data, f, indent=4, default=str)
 
 
-def create_dir(path: Path):
-    try:
-        os.mkdir(path)
-    except FileExistsError:
-        pass
-
-
-def download_results(
-    api: V3BetaApi,
-    rain_event_simulations: List[Dict],
-    results_dir: Path,
-    threedimodel_id: int,
-) -> None:
-    """
-    Download results by checking remaining simulations for uploaded files.
-    Place aggregation netcdfs in /aggregation_netcdf folder.
-    Place other result files in simulation-{id} folder.
-    """
-
-    # First clean results dir
-    for file in results_dir.iterdir():
-        if file.is_dir():
-            shutil.rmtree(Path(results_dir, file))
-
-    aggregation_dir = results_dir / Path("aggregation_netcdfs")
-    os.mkdir(aggregation_dir)
-
-    remaining = [sim["id"] for sim in rain_event_simulations]
-    crashes = []
-    total = len(rain_event_simulations)
-    while len(remaining) > 0:
-        import pdb; pdb.set_trace()
-        for simulation_id in remaining:
-            printProgressBar(total - len(remaining), total, "Downloading result files")
-            status: SimulationStatus = api.simulations_status_list(simulation_id)
-            if status.name == "crashed":
-                remaining.remove(simulation_id)
-                crashes.append(simulation_id)
-            elif status.name == "finished":
-                # wait for files to be uploaded
-                results = api.simulations_results_files_list(simulation_id).results
-                if results == [] or (
-                    results[0].file.state != "uploaded"
-                    or results[1].file.state != "uploaded"
-                    or results[2].file.state != "uploaded"
-                ):
-                    continue
-
-                remaining.remove(simulation_id)
-                simulation_dir = results_dir / Path(f"simulation-{simulation_id}")
-                create_dir(simulation_dir)
-                for result in results:
-                    download = api.simulations_results_files_download(
-                        result.id, simulation_id
-                    )
-                    if result.filename.startswith("agg"):
-                        urllib.request.urlretrieve(
-                            download.get_url,
-                            Path(
-                                aggregation_dir,
-                                f"aggregate_results_3di_sim_{simulation_id}",
-                            ).with_suffix(".nc"),
-                        )
-                    else:
-                        urllib.request.urlretrieve(
-                            download.get_url,
-                            Path(simulation_dir, result.filename),
-                        )
-        sleep(1)
-
-    # Download gridadmin
-    download = api.threedimodels_gridadmin_download(threedimodel_id)
-    urllib.request.urlretrieve(
-        download.get_url,
-        Path(results_dir, "gridadmin").with_suffix(".h5"),
-    )
-
-    printProgressBar(total, total, "Downloading result files")
-    for crash in crashes:
-        print(f"Warning: simulation {crash} crashed")
-
-
 @click.command()
 @click.argument(
     "threedimodel_id",
@@ -537,10 +452,10 @@ def download_results(
     "-o",
     "--out_path",
     type=click.Path(writable=True, path_type=Path),
-    default=Path("created_simulations.json"),
+    default=Path(f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"),
     help="Output file path (json)",
 )
-def run_rain_series_calculation(
+def create_rain_series_simulations(
     threedimodel_id: int,
     organisation_id: str,
     rain_files_dir: Path,
@@ -549,11 +464,11 @@ def run_rain_series_calculation(
     out_path: Path,
 ):
     """
-    Rain series calculation consists of 2 parts.
+    Batch rain series calculation consists of 2 parts.
     First part:
         - run simulation in dry state for 3 days
         - create saved states for every hour in day 3 which will be used as start state
-            for the rain series calculation
+            for the rain series simulations
 
     Second part:
         - start individual simulations which take a rain event csv as input
@@ -562,21 +477,21 @@ def run_rain_series_calculation(
     with ThreediApi(env_file=env_file, version="v3-beta") as api:
         api: V3BetaApi
         # Setup simulation and in dry state to create saved states
-        # print("Creating 3 day DWF simulation")
-        # simulation_dwf: Simulation = create_simulation(
-        #     api,
-        #     threedimodel_id,
-        #     organisation_id,
-        #     3 * 24 * 60 * 60,
-        #     RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
-        # )
-        # saved_states = create_saved_states(api, simulation_dwf)
-        # api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
-        # await_simulation_completion(api, simulation_dwf)
+        print("Creating 3 day DWF simulation")
+        simulation_dwf: Simulation = create_simulation(
+            api,
+            threedimodel_id,
+            organisation_id,
+            3 * 24 * 60 * 60,
+            RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
+        )
+        saved_states = create_saved_states(api, simulation_dwf)
+        api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
+        await_simulation_completion(api, simulation_dwf)
 
         # Convenience functions in case DWF simulation is already available
-        simulation_dwf = api.simulations_read(18410)
-        saved_states = get_saved_states(api, simulation_dwf)
+        # simulation_dwf = api.simulations_read(18410)
+        # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
         # netcdfs = convert_to_netcdf(rain_files_dir)
@@ -604,25 +519,7 @@ def run_rain_series_calculation(
             saved_states,
             results_dir / out_path,
         )
-        with Path(results_dir, "created_simulations.json").open("r") as f:
-            created_simulations = json.loads(f.read())
-        download_results(
-            api,
-            created_simulations["rain_event_simulations"],
-            results_dir,
-            threedimodel_id,
-        )
-
-        # Calculate statistics
-        batch_calculation_statistics(
-            netcdf_dir=str(Path(results_dir, "aggregation_netcdfs")),
-            gridadmin=str(Path(results_dir, "gridadmin").with_suffix(".h5")),
-            nr_years=10,
-        ).to_csv(
-            str(Path(results_dir, "batch_calculator_statistics").with_suffix(".csv")),
-            index=False,
-        )
 
 
 if __name__ == "__main__":
-    run_rain_series_calculation()
+    create_rain_series_simulations()
