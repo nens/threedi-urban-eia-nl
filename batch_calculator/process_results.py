@@ -96,11 +96,9 @@ def download_results(
     "created_simulations",
     type=click.Path(exists=True, readable=True, path_type=Path),
 )
-@click.option(
-    "-e",
-    "--env_file",
+@click.argument(
+    "env_file",
     type=click.Path(exists=True, readable=True, path_type=Path),
-    help="An env file containing API host, user, password",
 )
 def process_results(created_simulations: Path, env_file):
     """

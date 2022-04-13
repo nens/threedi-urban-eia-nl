@@ -49,8 +49,8 @@ setup(
     extras_require={"test": tests_require},
     entry_points={
         "console_scripts": [
-            "run-rain-series-simulation = batch_calculator.rain_series_simulations:create_rain_series_simulations",
-            "download-rain-series-results = batch_calculator.process_results:process_results",
+            "run-rain-series-simulations = batch_calculator.rain_series_simulations:create_rain_series_simulations",
+            "process-rain-series-results = batch_calculator.process_results:process_results",
         ]
     },
 )

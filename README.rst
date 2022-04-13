@@ -40,14 +40,30 @@ To ensure the correct behaviour of this tool please go through the following ste
     30,1.5
     60,0.0
 #. Create an output folder in which the result files will be stored.
-#. If you want to add dry weather flow, download the model sqlite and save it in your project folder.
-#. Find the "id" of your model in the Threedi Model List: https://api.3di.live/v3.0/threedimodels/
+#. Find the "id" of your model in the Threedi Model List: https://api.3di.live/v3/threedimodels/
 #. Open a command window and navigate to the batch-calculator folder.
-#. Run ``$ python scripts.py -h`` or ``$ run-batch-calculator -h`` to see which arguments you need to specify for your specific case.
+#. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
+#. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
+Environment file
+----------------
+
+To connect to the 3Di Api you will need an environment file containing the authentication credentials to connect.
+For example: staging.env::
+
+    THREEDI_API_USERNAME=daan.vaningen
+    THREEDI_API_PASSWORD=Legend42
+    THREEDI_API_HOST=https://api.staging.3di.live
 
 Example
 -------
-Example command::
 
-  $ run-batch-calculator model_id=12345 rain_files_dir=C:\rain_files results_dir=C:\results sqlite_path=C:\model.sqlite --ini_2d_water_level_constant 0.8
+  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <environment file path>
+
+  $ process-rain-series-results <created simulations json file> <environment file path>
+
+Example command:
+
+  $ run-rain-series-simulations 12345 rain_files/ results/ /home/daan/staging.env
+
+  $ process-rain-series-results results/created_simulations.json /home/daan/staging.env
