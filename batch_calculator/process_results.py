@@ -22,7 +22,6 @@ def download_results(
     rain_event_simulations: List[Dict],
     results_dir: Path,
     threedimodel_id: int,
-    overwrite: bool
 ) -> None:
     """
     Download results by checking remaining simulations for uploaded files.
@@ -103,14 +102,7 @@ def download_results(
     type=click.Path(exists=True, readable=True, path_type=Path),
     help="An env file containing API host, user, password",
 )
-@click.option(
-    "-o",
-    "--overwrite",
-    default=False,
-    type=bool,
-    help="Overwrite result files",
-)
-def process_results(created_simulations: Path, env_file, overwrite: bool):
+def process_results(created_simulations: Path, env_file):
     """
     Download and process the results of the rain series simulations.
     Input is the created_simulations-{date}.json file from rain_series_simulations.py
@@ -127,7 +119,6 @@ def process_results(created_simulations: Path, env_file, overwrite: bool):
             created_simulations["rain_event_simulations"],
             results_dir,
             created_simulations["threedimodel_id"],
-            overwrite,
         )
 
         # Calculate statistics

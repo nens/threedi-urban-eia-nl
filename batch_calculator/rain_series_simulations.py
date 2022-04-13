@@ -411,17 +411,21 @@ def create_result_file(
     simulation_dwf: Simulation,
     rain_event_simulations: List[Simulation],
     saved_states: List[SavedStateOverview],
-    out_path: Path,
+    results_dir: Path,
 ) -> None:
-    print(f"Writing output to {out_path}")
     data = {
         "threedimodel_id": threedimodel_id,
         "simulation_dwf": simulation_dwf.to_dict(),
         "rain_event_simulations": [re.to_dict() for re in rain_event_simulations],
         "saved_states": [ss.to_dict() for ss in saved_states],
     }
-    with out_path.open("w") as f:
+    results_file = Path(
+        results_dir,
+        f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
+    )
+    with results_file.open("w") as f:
         json.dump(data, f, indent=4, default=str)
+        print(f"Writing output to {results_file}")
 
 
 @click.command()
@@ -448,20 +452,12 @@ def create_result_file(
     type=click.Path(exists=True, readable=True, path_type=Path),
     help="An env file containing API host, user, password",
 )
-@click.option(
-    "-o",
-    "--out_path",
-    type=click.Path(writable=True, path_type=Path),
-    default=Path(f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"),
-    help="Output file path (json)",
-)
 def create_rain_series_simulations(
     threedimodel_id: int,
     organisation_id: str,
     rain_files_dir: Path,
     results_dir: Path,
     env_file: Path,
-    out_path: Path,
 ):
     """
     Batch rain series calculation consists of 2 parts.
@@ -517,7 +513,7 @@ def create_rain_series_simulations(
             simulation_dwf,
             rain_event_simulations,
             saved_states,
-            results_dir / out_path,
+            results_dir,
         )
 
 
