@@ -242,7 +242,9 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
 
         sim_start_var = f.createVariable("SIMULATION_START_TIMESTEP", np.int64, ())
 
-        values_var = f.createVariable("values", np.float64, ("time", "one"), fill_value=-9999)
+        values_var = f.createVariable(
+            "values", np.float64, ("time", "one"), fill_value=-9999
+        )
         values_var.units = "mm/h"
 
         time_var[:] = time
@@ -379,11 +381,12 @@ def create_simulations_from_rain_events(
         )
 
         for i in range((len(time) // 300) + 1):
-            time_slice = time[i * 300: (i + 1) * 300]
+            time_slice = time[i * 300 : (i + 1) * 300]
             time_slice_offset = time_slice - time_slice[0]
-            values_slice = values_converted[i * 300: (i + 1) * 300]
+            values_slice = values_converted[i * 300 : (i + 1) * 300]
             values = [
-                [x[0], x[1]] for x in np.stack((time_slice_offset, values_slice), axis=1)
+                [x[0], x[1]]
+                for x in np.stack((time_slice_offset, values_slice), axis=1)
             ]
             # Not allowed to have a timeseries of length 1, append timestep after 15 min
             if len(values) == 1:
@@ -420,8 +423,7 @@ def create_result_file(
         "saved_states": [ss.to_dict() for ss in saved_states],
     }
     results_file = Path(
-        results_dir,
-        f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
+        results_dir, f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
     )
     with results_file.open("w") as f:
         json.dump(data, f, indent=4, default=str)
@@ -442,15 +444,13 @@ def create_result_file(
     type=click.Path(writable=True, path_type=Path),
 )
 @click.argument(
+    "env_file",
+    type=click.Path(exists=True, readable=True, path_type=Path),
+)
+@click.argument(
     "organisation_id",
     type=str,
     default="4178c71845f14a3babc1b042e7505193",
-)
-@click.option(
-    "-e",
-    "--env_file",
-    type=click.Path(exists=True, readable=True, path_type=Path),
-    help="An env file containing API host, user, password",
 )
 def create_rain_series_simulations(
     threedimodel_id: int,
@@ -500,11 +500,7 @@ def create_rain_series_simulations(
         # )
 
         rain_event_simulations = create_simulations_from_rain_events(
-            api,
-            saved_states,
-            threedimodel_id,
-            organisation_id,
-            rain_files_dir
+            api, saved_states, threedimodel_id, organisation_id, rain_files_dir
         )
 
         # write results to out_path
