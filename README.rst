@@ -43,14 +43,14 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
-Example
+Example::
 -------
 
-  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional
+  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional)>
 
-  $ process-rain-series-results <created simulations json file> <username> -h <host>
+  $ process-rain-series-results <created simulations json file> <username> -h <host (optional)>
 
-Example command:
+Example command::
 
   $ run-rain-series-simulations 12345 rain_files/ results/ daan.vaningen
 
