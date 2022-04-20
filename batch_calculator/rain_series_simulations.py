@@ -294,7 +294,7 @@ def create_simulations_from_netcdf_rain_events(
         upload_file(upload.put_url, filepath)
 
         rain_event_simulations.append(simulation)
-        sleep(0.1)
+        sleep(5.0)
 
     # Start simulation if netcdf is processed
     print("Starting rain event simulations...")
@@ -313,6 +313,7 @@ def create_simulations_from_netcdf_rain_events(
                     f"Warning: error processing netcdf for simulation {simulation.id}.",
                     netcdf.file.state_description,
                 )
+            sleep(1.0)
 
     return started_simulations
 
@@ -331,11 +332,11 @@ def create_simulations_from_rain_events(
     """
     rain_event_simulations = []
     warnings = []
-    filenames = [f for f in rain_files_dir.iterdir() if f.is_file()]
-    for i, filename in enumerate(filenames):
-        printProgressBar(i + 1, len(filenames), "Creating rain event simulations")
+    files = [f for f in rain_files_dir.iterdir() if f.is_file()]
+    for i, file in enumerate(files):
+        printProgressBar(i + 1, len(files), "Creating rain event simulations")
         # retrievie rain timeseries data
-        with open(rain_files_dir / filename, "r") as f:
+        with open(file, "r") as f:
             timeseries = np.array(
                 [
                     [int(row.split(",")[0]), float(row.split(",")[1])]
@@ -345,15 +346,15 @@ def create_simulations_from_rain_events(
             )
 
         if timeseries[0, 0] != 0:
-            raise ValueError(f"{filename.name}: first timestamp should be 0")
+            raise ValueError(f"{file.name}: first timestamp should be 0")
         if timeseries[-1, 1] != 0:
             warnings.append(
-                f"Warning: {filename.name} last rain intensity value is not 0"
+                f"Warning: {file.name} last rain intensity value is not 0"
             )
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
         filename_date = (
-            datetime.strptime(filename.name.split()[-1], "%Y%m%d%H%M%S")
+            datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
             .astimezone(tz=pytz.timezone("Europe/Amsterdam"))
             .astimezone(tz=pytz.UTC)
             .replace(tzinfo=None)
@@ -374,16 +375,16 @@ def create_simulations_from_rain_events(
             organisation_id,
             time[-1] + 30 * 60,  # extend the simulation 30 minutes to be safe
             filename_date,
-            f"rain series calculation {filename.name.split('.')[0]}",
+            f"rain series calculation {file.name.split('.')[0]}",
         )
         api.simulations_initial_saved_state_create(
             simulation.id, data={"saved_state": saved_states[filename_date.hour].id}
         )
 
         for i in range((len(time) // 300) + 1):
-            time_slice = time[i * 300 : (i + 1) * 300]
+            time_slice = time[i * 300: (i + 1) * 300]
             time_slice_offset = time_slice - time_slice[0]
-            values_slice = values_converted[i * 300 : (i + 1) * 300]
+            values_slice = values_converted[i * 300: (i + 1) * 300]
             values = [
                 [x[0], x[1]]
                 for x in np.stack((time_slice_offset, values_slice), axis=1)
@@ -402,6 +403,7 @@ def create_simulations_from_rain_events(
 
         rain_event_simulations.append(simulation)
         api.simulations_actions_create(simulation.id, Action(name="queue"))
+        sleep(5.0)
 
     for warning in warnings:
         print(warning)
@@ -444,20 +446,34 @@ def create_result_file(
     type=click.Path(writable=True, path_type=Path),
 )
 @click.argument(
-    "env_file",
-    type=click.Path(exists=True, readable=True, path_type=Path),
+    "user",
+    type=str,
 )
-@click.argument(
-    "organisation_id",
+@click.option(
+    "-o",
+    "--organisation",
     type=str,
     default="4178c71845f14a3babc1b042e7505193",
 )
+@click.option(
+    "-h",
+    "--host",
+    type=str,
+    default="https://api.3di.live",
+)
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+)
 def create_rain_series_simulations(
     threedimodel_id: int,
-    organisation_id: str,
     rain_files_dir: Path,
     results_dir: Path,
-    env_file: Path,
+    user: str,
+    password: str,
+    organisation: str,
+    host: str,
 ):
     """
     Batch rain series calculation consists of 2 parts.
@@ -470,24 +486,29 @@ def create_rain_series_simulations(
         - start individual simulations which take a rain event csv as input
         - the csv name contains information about the start date and time of the event
     """
-    with ThreediApi(env_file=env_file, version="v3-beta") as api:
+    config = {
+        "THREEDI_API_HOST": host,
+        "THREEDI_API_USERNAME": user,
+        "THREEDI_API_PASSWORD": password,
+    }
+    with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
         # Setup simulation and in dry state to create saved states
         print("Creating 3 day DWF simulation")
         simulation_dwf: Simulation = create_simulation(
             api,
             threedimodel_id,
-            organisation_id,
+            organisation,
             3 * 24 * 60 * 60,
             RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
         )
-        saved_states = create_saved_states(api, simulation_dwf)
-        api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
-        await_simulation_completion(api, simulation_dwf)
+        # saved_states = create_saved_states(api, simulation_dwf)
+        # api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
+        # await_simulation_completion(api, simulation_dwf)
 
         # Convenience functions in case DWF simulation is already available
-        # simulation_dwf = api.simulations_read(18410)
-        # saved_states = get_saved_states(api, simulation_dwf)
+        simulation_dwf = api.simulations_read(19803)
+        saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
         # netcdfs = convert_to_netcdf(rain_files_dir)
@@ -500,7 +521,7 @@ def create_rain_series_simulations(
         # )
 
         rain_event_simulations = create_simulations_from_rain_events(
-            api, saved_states, threedimodel_id, organisation_id, rain_files_dir
+            api, saved_states, threedimodel_id, organisation, rain_files_dir
         )
 
         # write results to out_path

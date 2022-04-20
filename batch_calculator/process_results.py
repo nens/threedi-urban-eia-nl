@@ -77,7 +77,7 @@ def download_results(
                             download.get_url,
                             Path(simulation_dir, result.filename),
                         )
-        sleep(0.1)
+            sleep(1)
 
     # Download gridadmin
     download = api.threedimodels_gridadmin_download(threedimodel_id)
@@ -97,19 +97,35 @@ def download_results(
     type=click.Path(exists=True, readable=True, path_type=Path),
 )
 @click.argument(
-    "env_file",
-    type=click.Path(exists=True, readable=True, path_type=Path),
+    "user",
+    type=str,
 )
-def process_results(created_simulations: Path, env_file):
+@click.option(
+    "-h",
+    "--host",
+    type=str,
+    default="https://api.3di.live",
+)
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+)
+def process_results(created_simulations: Path, user: str, host: str, password: str):
     """
     Download and process the results of the rain series simulations.
     Input is the created_simulations-{date}.json file from rain_series_simulations.py
     """
-    with ThreediApi(env_file=env_file, version="v3-beta") as api:
+    config = {
+        "THREEDI_API_HOST": host,
+        "THREEDI_API_USERNAME": user,
+        "THREEDI_API_PASSWORD": password,
+    }
+    with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
 
         results_dir = created_simulations.absolute().parent
-        with Path(results_dir, "created_simulations.json").open("r") as f:
+        with Path(created_simulations).open("r") as f:
             created_simulations = json.loads(f.read())
 
         download_results(
