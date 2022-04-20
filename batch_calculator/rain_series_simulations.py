@@ -502,13 +502,13 @@ def create_rain_series_simulations(
             3 * 24 * 60 * 60,
             RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
         )
-        # saved_states = create_saved_states(api, simulation_dwf)
-        # api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
-        # await_simulation_completion(api, simulation_dwf)
+        saved_states = create_saved_states(api, simulation_dwf)
+        api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
+        await_simulation_completion(api, simulation_dwf)
 
         # Convenience functions in case DWF simulation is already available
-        simulation_dwf = api.simulations_read(19803)
-        saved_states = get_saved_states(api, simulation_dwf)
+        # simulation_dwf = api.simulations_read(19803)
+        # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
         # netcdfs = convert_to_netcdf(rain_files_dir)
