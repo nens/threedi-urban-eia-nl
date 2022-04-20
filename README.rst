@@ -45,25 +45,15 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
-Environment file
-----------------
-
-To connect to the 3Di Api you will need an environment file containing the authentication credentials to connect.
-For example: staging.env::
-
-    THREEDI_API_USERNAME=daan.vaningen
-    THREEDI_API_PASSWORD=Legend42
-    THREEDI_API_HOST=https://api.staging.3di.live
-
 Example
 -------
 
-  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <environment file path>
+  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional
 
-  $ process-rain-series-results <created simulations json file> <environment file path>
+  $ process-rain-series-results <created simulations json file> <username> -h <host>
 
 Example command:
 
-  $ run-rain-series-simulations 12345 rain_files/ results/ /home/daan/staging.env
+  $ run-rain-series-simulations 12345 rain_files/ results/ daan.vaningen
 
-  $ process-rain-series-results results/created_simulations.json /home/daan/staging.env
+  $ process-rain-series-results results/created_simulations.json daan.vaningen
