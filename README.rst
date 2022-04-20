@@ -26,9 +26,7 @@ For installation on the utr-con-task-01.nens.local use this (you need administra
 3. Then install or upgrade the batch-calculator through a local installation procedure::
 
     $ pip3 install -e /root/batch-calculator --upgrade
-  
-  
-  
+
 Usage
 -----
 
