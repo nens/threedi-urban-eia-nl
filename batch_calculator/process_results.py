@@ -4,7 +4,10 @@ import os
 import shutil
 import urllib
 
-from batch_calculator.rain_series_simulations import printProgressBar
+from batch_calculator.rain_series_simulations import (
+    printProgressBar,
+    api_call,
+)
 from batch_calculator.batch_calculation_statistics import batch_calculation_statistics
 from pathlib import Path
 from threedi_api_client import ThreediApi
@@ -43,13 +46,17 @@ def download_results(
     while len(remaining) > 0:
         for simulation_id in remaining:
             printProgressBar(total - len(remaining), total, "Downloading result files")
-            status: SimulationStatus = api.simulations_status_list(simulation_id)
+            status: SimulationStatus = api_call(
+                api.simulations_status_list, simulation_id
+            )
             if status.name == "crashed":
                 remaining.remove(simulation_id)
                 crashes.append(simulation_id)
             elif status.name == "finished":
                 # wait for files to be uploaded
-                results = api.simulations_results_files_list(simulation_id).results
+                results = api_call(
+                    api.simulations_results_files_list, simulation_id
+                ).results
                 if results == [] or (
                     results[0].file.state != "uploaded"
                     or results[1].file.state != "uploaded"
@@ -61,8 +68,12 @@ def download_results(
                 simulation_dir = results_dir / Path(f"simulation-{simulation_id}")
                 os.mkdir(simulation_dir)
                 for result in results:
-                    download = api.simulations_results_files_download(
-                        result.id, simulation_id
+                    download = api_call(
+                        api.simulations_results_files_download,
+                        (
+                            result.id,
+                            simulation_id,
+                        ),
                     )
                     if result.filename.startswith("agg"):
                         urllib.request.urlretrieve(
@@ -80,7 +91,7 @@ def download_results(
             sleep(1)
 
     # Download gridadmin
-    download = api.threedimodels_gridadmin_download(threedimodel_id)
+    download = api_call(api.threedimodels_gridadmin_download, threedimodel_id)
     urllib.request.urlretrieve(
         download.get_url,
         Path(results_dir, "gridadmin").with_suffix(".h5"),
