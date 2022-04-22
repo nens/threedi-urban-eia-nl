@@ -31,6 +31,19 @@ from typing import (
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 
 
+def api_call(call, *args, **kwargs):
+    try:
+        result = call(*args, **kwargs)
+    except ApiException as e:
+        if e.status == 429:
+            sleep(30)
+            api_call(call, *args, **kwargs)
+        else:
+            raise e
+
+    return result
+
+
 def printProgressBar(iteration, total, text, length=100):
     percent = int(100 * (iteration / total))
     bar = "#" * percent + "-" * (length - percent)
@@ -48,7 +61,10 @@ def create_simulation(
     simulation_name="rain series calculation",
 ) -> Simulation:
     """Create simulation from threedimodel simulation template."""
-    result = api.simulation_templates_list(simulation__threedimodel__id=threedimodel_id)
+    result = api_call(
+        api.simulation_templates_list,
+        **{"simulation__threedimodel__id": threedimodel_id},
+    )
     assert len(result.results) > 0
 
     template: Template = result.results[0]
@@ -60,18 +76,23 @@ def create_simulation(
         start_datetime=start_datetime,
     )
 
-    simulation = api.simulations_from_template(from_template)
+    simulation = api_call(
+        api.simulations_from_template,
+        from_template,
+    )
     return simulation
 
 
 def await_simulation_completion(api: V3BetaApi, simulation: Simulation) -> None:
     while True:
-        status: SimulationStatus = api.simulations_status_list(simulation.id)
+        status: SimulationStatus = api_call(api.simulations_status_list, simulation.id)
         if status.name == "crashed":
             raise ValueError("DWF initialization simulation crashed")
         elif status.name != "finished":
             try:
-                progress: Progress = api.simulations_progress_list(simulation.id)
+                progress: Progress = api_call(
+                    api.simulations_progress_list, simulation.id
+                )
                 printProgressBar(
                     progress.percentage, 100, f"Simulation {simulation.id}"
                 )
@@ -90,9 +111,10 @@ def create_saved_states(
     """Create saved states from simulation."""
     TWO_DAYS = 60 * 60 * 24 * 2
     saved_states = [
-        api.simulations_create_saved_states_timed_create(
+        api_call(
+            api.simulations_create_saved_states_timed_create,
             simulation.id,
-            data={"time": i * 60 * 60 + TWO_DAYS, "name": f"DWF hour {i}"},
+            **{"data": {"time": i * 60 * 60 + TWO_DAYS, "name": f"DWF hour {i}"}},
         )
         for i in range(24)
     ]
@@ -104,8 +126,8 @@ def get_saved_states(
     api: V3BetaApi, simulation: Simulation
 ) -> List[SavedStateOverview]:
     results = []
-    states = api.simulations_create_saved_states_timed_list(
-        simulation.id, **{"limit": 100}
+    states = api_call(
+        api.simulations_create_saved_states_timed_list, simulation.id, **{"limit": 100}
     )
     for i in range(24):
         for state in states.results:
@@ -283,13 +305,16 @@ def create_simulations_from_netcdf_rain_events(
             start_date,
             f"rain series calculation {filepath.name.split('.')[0]}",
         )
-        api.simulations_initial_saved_state_create(
-            simulation.id, data={"saved_state": saved_states[start_date.hour].id}
+        api_call(
+            api.simulations_initial_saved_state_create,
+            simulation.id,
+            **{"data": {"saved_state": saved_states[start_date.hour].id}},
         )
 
-        upload: UploadEventFile = api.simulations_events_rain_timeseries_netcdf_create(
+        upload: UploadEventFile = api_call(
+            api.simulations_events_rain_timeseries_netcdf_create,
             simulation.id,
-            data={"filename": filepath.name},
+            **{"data": {"filename": filepath.name}},
         )
         upload_file(upload.put_url, filepath)
 
@@ -301,13 +326,19 @@ def create_simulations_from_netcdf_rain_events(
     started_simulations = []
     while len(rain_event_simulations) > 0:
         for simulation in rain_event_simulations:
-            netcdf = api.simulations_events_rain_timeseries_netcdf_list(
-                simulation.id
+            netcdf = api_call(
+                api.simulations_events_rain_timeseries_netcdf_list, simulation.id
             ).results[0]
             if netcdf.file.state == "processed":
                 started_simulations.append(simulation)
                 rain_event_simulations.remove(simulation)
-                api.simulations_actions_create(simulation.id, Action(name="queue"))
+                api_call(
+                    api.simulations_actions_create,
+                    *(
+                        simulation.id,
+                        Action(name="queue"),
+                    ),
+                )
             elif netcdf.file.state == "error":
                 print(
                     f"Warning: error processing netcdf for simulation {simulation.id}.",
@@ -348,9 +379,7 @@ def create_simulations_from_rain_events(
         if timeseries[0, 0] != 0:
             raise ValueError(f"{file.name}: first timestamp should be 0")
         if timeseries[-1, 1] != 0:
-            warnings.append(
-                f"Warning: {file.name} last rain intensity value is not 0"
-            )
+            warnings.append(f"Warning: {file.name} last rain intensity value is not 0")
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
         filename_date = (
@@ -377,8 +406,10 @@ def create_simulations_from_rain_events(
             filename_date,
             f"rain series calculation {file.name.split('.')[0]}",
         )
-        api.simulations_initial_saved_state_create(
-            simulation.id, data={"saved_state": saved_states[filename_date.hour].id}
+        api_call(
+            api.simulations_initial_saved_state_create,
+            simulation.id,
+            **{"data": {"saved_state": saved_states[filename_date.hour].id}},
         )
 
         for i in range((len(time) // 300) + 1):
@@ -399,10 +430,20 @@ def create_simulations_from_rain_events(
                 "values": values,
                 "units": "m/s",
             }
-            api.simulations_events_rain_timeseries_create(simulation.id, data=rain_data)
+            api_call(
+                api.simulations_events_rain_timeseries_create,
+                simulation.id,
+                **{"data": rain_data},
+            )
 
         rain_event_simulations.append(simulation)
-        api.simulations_actions_create(simulation.id, Action(name="queue"))
+        api_call(
+            api.simulations_actions_create,
+            *(
+                simulation.id,
+                Action(name="queue"),
+            ),
+        )
         sleep(5.0)
 
     for warning in warnings:
@@ -503,11 +544,14 @@ def create_rain_series_simulations(
             RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
         )
         saved_states = create_saved_states(api, simulation_dwf)
-        api.simulations_actions_create(simulation_dwf.id, Action(name="queue"))
+        api_call(
+            api.simulations_actions_create,
+            *(simulation_dwf.id, Action(name="queue"),),
+        )
         await_simulation_completion(api, simulation_dwf)
 
         # Convenience functions in case DWF simulation is already available
-        # simulation_dwf = api.simulations_read(19803)
+        # simulation_dwf = api.simulations_read(20210)
         # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations

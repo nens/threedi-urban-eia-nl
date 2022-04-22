@@ -9,10 +9,6 @@ Installation
 ------------
 The easiest way to install the tool is through cloning the repository.
 
-We can also be installed with::
-
-  $ pip install batch-calculator
-  
 For installation on the utr-con-task-01.nens.local use this (you need administrator rights for this!):
 
 1. First copy this repository to your workdir on your local machine, so that you can access it on the linux-machine
@@ -43,7 +39,7 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
-Example::
+Example
 -------
 
   $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional)>
