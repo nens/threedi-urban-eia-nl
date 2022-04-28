@@ -65,8 +65,8 @@ def download_results(
                     continue
 
                 remaining.remove(simulation_id)
-                simulation_dir = results_dir / Path(f"simulation-{simulation_id}")
-                os.mkdir(simulation_dir)
+                # simulation_dir = results_dir / Path(f"simulation-{simulation_id}")
+                # os.mkdir(simulation_dir)
                 for result in results:
                     download = api_call(
                         api.simulations_results_files_download,
@@ -83,11 +83,11 @@ def download_results(
                                 f"aggregate_results_3di_sim_{simulation_id}",
                             ).with_suffix(".nc"),
                         )
-                    else:
-                        urllib.request.urlretrieve(
-                            download.get_url,
-                            Path(simulation_dir, result.filename),
-                        )
+                    # else:
+                    #     urllib.request.urlretrieve(
+                    #         download.get_url,
+                    #         Path(simulation_dir, result.filename),
+                    #     )
             sleep(1)
 
     # Download gridadmin
