@@ -70,7 +70,7 @@ def download_results(
                 for result in results:
                     download = api_call(
                         api.simulations_results_files_download,
-                        (
+                        *(
                             result.id,
                             simulation_id,
                         ),
