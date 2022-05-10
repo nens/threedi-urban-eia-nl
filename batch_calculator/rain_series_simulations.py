@@ -36,8 +36,8 @@ def api_call(call, *args, **kwargs):
         result = call(*args, **kwargs)
     except ApiException as e:
         if e.status == 429:
-            sleep(30)
-            api_call(call, *args, **kwargs)
+            sleep(60)
+            return api_call(call, *args, **kwargs)
         else:
             raise e
 
@@ -319,7 +319,6 @@ def create_simulations_from_netcdf_rain_events(
         upload_file(upload.put_url, filepath)
 
         rain_event_simulations.append(simulation)
-        sleep(5.0)
 
     # Start simulation if netcdf is processed
     print("Starting rain event simulations...")
@@ -444,7 +443,6 @@ def create_simulations_from_rain_events(
                 Action(name="queue"),
             ),
         )
-        sleep(5.0)
 
     for warning in warnings:
         print(warning)

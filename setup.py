@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.1.dev0"
+version = "0.2.dev0"
 
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
 
@@ -37,8 +37,8 @@ setup(
     # Get strings from http://www.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["Programming Language :: Python", "Framework :: Django"],
     keywords=[],
-    author="Wout Lexmond",
-    author_email="wout.lexmond@nelen-schuurmans.nl",
+    author="Daan van Ingen",
+    author_email="daan.vaningen@nelen-schuurmans.nl",
     url="https://github.com/nens/batch-calculator",
     license="MIT",
     packages=["batch_calculator"],
