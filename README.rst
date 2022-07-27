@@ -39,12 +39,23 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
+Created Files and Directories
+-----------------------------
+
+- aggregation_netcdf, directory containing simulation aggregate result data
+- simulations, directory containing simulation log data (use --debug option)
+- batch_calculator_statistics.csv, batch calculation result
+- crashed_simulations.json, IDs of crashed simulations (optional)
+- created_simulations_<date>.json, information about created simulations, serves as input file for process-rain-series-results
+- gridadmin.h5, necessary for calculation of batch statistics
+- nan_rows.json, information about weirs that contain NaN data in their cumulative discharge (optional)
+
 Example
--------
+------------
 
   $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional)>
 
-  $ process-rain-series-results <created simulations json file> <username> -h <host (optional)>
+  $ process-rain-series-results <created simulations json file> <username> -h <host (optional)> -d <sets debug flag to True>
 
 Example command::
 

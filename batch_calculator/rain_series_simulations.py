@@ -36,7 +36,7 @@ def api_call(call, *args, **kwargs):
         result = call(*args, **kwargs)
     except ApiException as e:
         if e.status == 429:
-            sleep(60)
+            sleep(30)
             return api_call(call, *args, **kwargs)
         else:
             raise e
@@ -65,7 +65,8 @@ def create_simulation(
         api.simulation_templates_list,
         **{"simulation__threedimodel__id": threedimodel_id},
     )
-    assert len(result.results) > 0
+    if len(result.results) == 0:
+        raise ValueError("No simulation template for ThreediModel")
 
     template: Template = result.results[0]
     from_template = FromTemplate(
@@ -152,7 +153,7 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
     filenames = [f for f in rain_files_dir.iterdir() if f.is_file()]
     for filename in filenames:
         # retrievie rain timeseries data
-        with open(rain_files_dir / filename, "r") as f:
+        with open(filename, "r") as f:
             timeseries = np.array(
                 [
                     [int(row.split(",")[0]), float(row.split(",")[1])]
@@ -493,12 +494,14 @@ def create_result_file(
     "--organisation",
     type=str,
     default="4178c71845f14a3babc1b042e7505193",
+    help="Organisation unique id",
 )
 @click.option(
     "-h",
     "--host",
     type=str,
     default="https://api.3di.live",
+    help="Host to run batch calculation on",
 )
 @click.option(
     "--password",
@@ -515,15 +518,16 @@ def create_rain_series_simulations(
     host: str,
 ):
     """
+    \b
     Batch rain series calculation consists of 2 parts.
     First part:
         - run simulation in dry state for 3 days
-        - create saved states for every hour in day 3 which will be used as start state
-            for the rain series simulations
+        - create saved states for every hour in day 3 which will be used as start state for the rain series simulations
 
+    \b
     Second part:
-        - start individual simulations which take a rain event csv as input
-        - the csv name contains information about the start date and time of the event
+        - start individual simulations which take a rain event as input
+        - the filename contains information about the start date and time of the event
     """
     config = {
         "THREEDI_API_HOST": host,
@@ -549,7 +553,7 @@ def create_rain_series_simulations(
         await_simulation_completion(api, simulation_dwf)
 
         # Convenience functions in case DWF simulation is already available
-        # simulation_dwf = api.simulations_read(20210)
+        # simulation_dwf = api.simulations_read(22487)
         # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
@@ -559,7 +563,7 @@ def create_rain_series_simulations(
         #     saved_states,
         #     netcdfs,
         #     threedimodel_id,
-        #     organisation_id,
+        #     organisation,
         # )
 
         rain_event_simulations = create_simulations_from_rain_events(

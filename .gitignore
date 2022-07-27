@@ -39,5 +39,5 @@ docker-compose.override.yml
 
 # data
 rain_files
-results
+results*
 netcdf_rain_files
