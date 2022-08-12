@@ -5,28 +5,11 @@ version = "0.2.dev0"
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
 
 install_requires = [
-    "aiofiles",
-    "aiohttp",
     "click",
-    "h5py",
-    "jwt",
     "netCDF4",
-    "pyjwt==1.7.1",
-    "requests",
     "pandas",
     "threedi-api-client>=4.0.0",
     "threedigrid>=1.0.16",
-    "threedi-modelchecker==0.25.3",
-]
-
-tests_require = [
-    "pytest",
-    "mock",
-    "pytest-cov",
-    "pytest-flakes",
-    "pytest-black",
-    "threedi-api-client",
-    "requests",
 ]
 
 setup(
@@ -45,8 +28,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
-    tests_require=tests_require,
-    extras_require={"test": tests_require},
     entry_points={
         "console_scripts": [
             "run-rain-series-simulations = batch_calculator.rain_series_simulations:create_rain_series_simulations",

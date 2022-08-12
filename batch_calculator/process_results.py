@@ -1,14 +1,16 @@
 import click
 import json
+import numpy as np
 import os
+import pandas
 import shutil
-import urllib
+import zipfile
 
 from batch_calculator.rain_series_simulations import (
     printProgressBar,
     api_call,
 )
-from batch_calculator.batch_calculation_statistics import batch_calculation_statistics
+from math import floor
 from pathlib import Path
 from threedi_api_client import ThreediApi
 from threedi_api_client.openapi.models import SimulationStatus
@@ -18,6 +20,105 @@ from typing import (
     Dict,
     List,
 )
+from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
+from urllib.request import urlretrieve
+
+
+def repetition_time_volumes(weir_results, n, stats=[1, 2, 5, 10]):
+    """
+    Created on Mon May 18 14:09:04 2020
+
+    @author: Emile.deBadts
+    """
+    sorted_weir_results = sorted(list(weir_results), reverse=True)
+    if n == 10:
+        T_volume_list = []
+        for T in stats:
+            if T == 5:
+                volume = sorted_weir_results[1] - 0.48 * (
+                    sorted_weir_results[1] - sorted_weir_results[2]
+                )
+                T_volume_list += [volume]
+            elif T == 10:
+                volume = sorted_weir_results[0] - 0.46 * (
+                    sorted_weir_results[0] - sorted_weir_results[1]
+                )
+                T_volume_list += [volume]
+            else:
+                T_volume_list += [sorted_weir_results[int(n / T) - 1]]
+
+    if n == 25:
+        T_volume_list = []
+        for T in stats:
+            if (n / T).is_integer():
+                T_volume_list += [sorted_weir_results[int(n / T) - 1]]
+            else:
+                volume = sorted_weir_results[floor(n / T) - 1] - 0.5 * (
+                    sorted_weir_results[floor(n / T) - 1]
+                    - sorted_weir_results[floor(n / T)]
+                )
+                T_volume_list += [volume]
+
+    return T_volume_list
+
+
+def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int):
+    """
+    Compute weir statistics from netcdf files
+    @author: Emile.deBadts
+    """
+    print("Processing statistics...")
+
+    # Setup result pandas dataframe
+    nc_files = [file for file in os.listdir(netcdf_dir) if file.endswith(".nc")]
+    ga = GridH5AggregateResultAdmin(gridadmin, netcdf_dir / nc_files[0])
+    weir_pks = ga.lines.weirs.content_pk
+    results = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
+    nan_results = {}
+
+    # Get cumulative discharge for all weirs
+    for i, aggregate_file in enumerate(nc_files):
+        ga = GridH5AggregateResultAdmin(gridadmin, netcdf_dir / aggregate_file)
+        weir_data = ga.lines.filter(content_type="v2_weir").only(
+            "content_pk", "content_type", "q_cum"
+        )
+        cumulative_discharge = [abs(x) for x in (weir_data.q_cum)[-1]]
+        results.loc[i] = [aggregate_file, *cumulative_discharge]
+
+    # Find results for each weir
+    output = pandas.DataFrame(
+        columns=["weir_id", "frequency", "average_volume", "t1", "t2", "t5", "t10"]
+    )
+
+    for i, weir in enumerate(results.columns[1:]):
+        nan_rows = results[results[weir].isnull()]
+        if len(nan_rows) > 0:
+            nan_results[int(weir)] = nan_rows["aggregate_netcdf"].values
+
+        frequency = float(sum(results[weir] > 0) / nr_years)
+        average_volume = sum(results[weir]) / nr_years
+        weir_tx_list = [
+            *repetition_time_volumes(weir_results=results[weir], n=nr_years)
+        ]
+
+        output.loc[i] = [
+            weir,
+            frequency,
+            average_volume,
+            *weir_tx_list,
+        ]
+
+    if len(nan_results) > 0:
+        print(
+            "WARNING: one or more weirs found which have NaN results in their cumulative "
+            "discharge. Please check the nan_rows.json file for more information. "
+            "This file contains weir id and netcdf file where the NaN values are found. "
+        )
+        results_file = netcdf_dir.parent / "nan_rows.json"
+        with results_file.open("w") as f:
+            json.dump(nan_results, f, indent=4, default=str)
+
+    return output
 
 
 def download_results(
@@ -25,6 +126,7 @@ def download_results(
     rain_event_simulations: List[Dict],
     results_dir: Path,
     threedimodel_id: int,
+    debug: bool,
 ) -> None:
     """
     Download results by checking remaining simulations for uploaded files.
@@ -37,21 +139,24 @@ def download_results(
         if file.is_dir():
             shutil.rmtree(Path(results_dir, file))
 
-    aggregation_dir = results_dir / Path("aggregation_netcdfs")
-    os.mkdir(aggregation_dir)
+    aggregation_dir = results_dir / "aggregation_netcdfs"
+    aggregation_dir.mkdir()
 
-    remaining = [sim["id"] for sim in rain_event_simulations]
+    simulations_dir = results_dir / "simulations"
+    remaining = [(sim["id"], sim["name"]) for sim in rain_event_simulations]
     crashes = []
     total = len(rain_event_simulations)
     while len(remaining) > 0:
-        for simulation_id in remaining:
+        for simulation in remaining:
+            simulation_id: int = simulation[0]
+            isahw: str = simulation[1].split("isahw")[1]
             printProgressBar(total - len(remaining), total, "Downloading result files")
             status: SimulationStatus = api_call(
                 api.simulations_status_list, simulation_id
             )
             if status.name == "crashed":
-                remaining.remove(simulation_id)
-                crashes.append(simulation_id)
+                remaining.remove(simulation)
+                crashes.append(simulation)
             elif status.name == "finished":
                 # wait for files to be uploaded
                 results = api_call(
@@ -64,42 +169,61 @@ def download_results(
                 ):
                     continue
 
-                remaining.remove(simulation_id)
-                # simulation_dir = results_dir / Path(f"simulation-{simulation_id}")
-                # os.mkdir(simulation_dir)
+                remaining.remove(simulation)
                 for result in results:
-                    download = api_call(
-                        api.simulations_results_files_download,
-                        *(
-                            result.id,
-                            simulation_id,
-                        ),
-                    )
                     if result.filename.startswith("agg"):
-                        urllib.request.urlretrieve(
+                        download = api_call(
+                            api.simulations_results_files_download,
+                            *(
+                                result.id,
+                                simulation_id,
+                            ),
+                        )
+                        urlretrieve(
                             download.get_url,
                             Path(
                                 aggregation_dir,
                                 f"aggregate_results_3di_sim_{simulation_id}",
                             ).with_suffix(".nc"),
                         )
-                    # else:
-                    #     urllib.request.urlretrieve(
-                    #         download.get_url,
-                    #         Path(simulation_dir, result.filename),
-                    #     )
-            sleep(1)
+
+                    if debug and result.filename.startswith("log"):
+                        "Download log files and unzip"
+                        sim_dir = simulations_dir / f"{simulation_id}-isahw{isahw}"
+                        sim_dir.mkdir(parents=True)
+                        download = api_call(
+                            api.simulations_results_files_download,
+                            *(
+                                result.id,
+                                simulation_id,
+                            ),
+                        )
+                        urlretrieve(
+                            download.get_url,
+                            Path(sim_dir, result.filename),
+                        )
+                        with zipfile.ZipFile(
+                            sim_dir / f"log_files_sim_{simulation_id}.zip", "r"
+                        ) as zip:
+                            zip.extractall(sim_dir)
+
+    printProgressBar(total, total, "Downloading result files")
 
     # Download gridadmin
     download = api_call(api.threedimodels_gridadmin_download, threedimodel_id)
-    urllib.request.urlretrieve(
+    urlretrieve(
         download.get_url,
         Path(results_dir, "gridadmin").with_suffix(".h5"),
     )
 
-    printProgressBar(total, total, "Downloading result files")
-    for crash in crashes:
-        print(f"Warning: simulation {crash} crashed")
+    # Carshes feedback
+    if len(crashes) > 0:
+        print(
+            f"WARNING: {len(crashes)} simulations crashed, see crashed_simulations.json"
+        )
+        results_file = results_dir / "crashed_simulations.json"
+        with results_file.open("w") as f:
+            json.dump(crashes, f, indent=4, default=str)
 
 
 @click.command()
@@ -116,16 +240,29 @@ def download_results(
     "--host",
     type=str,
     default="https://api.3di.live",
+    help="Host to run batch calculation on",
 )
 @click.option(
     "--password",
     prompt=True,
     hide_input=True,
 )
-def process_results(created_simulations: Path, user: str, host: str, password: str):
+@click.option(
+    "-d",
+    "--debug",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Download simulation logs to debug potential issues [default: False]",
+)
+def process_results(
+    created_simulations: Path, user: str, host: str, password: str, debug: bool
+):
     """
     Download and process the results of the rain series simulations.
     Input is the created_simulations-{date}.json file from rain_series_simulations.py
+
+    debug option downloads log files per simulation.
     """
     config = {
         "THREEDI_API_HOST": host,
@@ -144,11 +281,12 @@ def process_results(created_simulations: Path, user: str, host: str, password: s
             created_simulations["rain_event_simulations"],
             results_dir,
             created_simulations["threedimodel_id"],
+            debug,
         )
 
         # Calculate statistics
         batch_calculation_statistics(
-            netcdf_dir=str(Path(results_dir, "aggregation_netcdfs")),
+            netcdf_dir=Path(results_dir, "aggregation_netcdfs"),
             gridadmin=str(Path(results_dir, "gridadmin").with_suffix(".h5")),
             nr_years=10,
         ).to_csv(
