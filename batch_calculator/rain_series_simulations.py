@@ -413,9 +413,9 @@ def create_simulations_from_rain_events(
         )
 
         for i in range((len(time) // 300) + 1):
-            time_slice = time[i * 300: (i + 1) * 300]
+            time_slice = time[i * 300 : (i + 1) * 300]
             time_slice_offset = time_slice - time_slice[0]
-            values_slice = values_converted[i * 300: (i + 1) * 300]
+            values_slice = values_converted[i * 300 : (i + 1) * 300]
             values = [
                 [x[0], x[1]]
                 for x in np.stack((time_slice_offset, values_slice), axis=1)
@@ -483,7 +483,7 @@ def create_result_file(
 )
 @click.argument(
     "results_dir",
-    type=click.Path(writable=True, path_type=Path),
+    type=click.Path(exists=True, writable=True, path_type=Path),
 )
 @click.argument(
     "user",
@@ -548,7 +548,10 @@ def create_rain_series_simulations(
         saved_states = create_saved_states(api, simulation_dwf)
         api_call(
             api.simulations_actions_create,
-            *(simulation_dwf.id, Action(name="queue"),),
+            *(
+                simulation_dwf.id,
+                Action(name="queue"),
+            ),
         )
         await_simulation_completion(api, simulation_dwf)
 

@@ -93,7 +93,7 @@ def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int
     for i, weir in enumerate(results.columns[1:]):
         nan_rows = results[results[weir].isnull()]
         if len(nan_rows) > 0:
-            nan_results[int(weir)] = nan_rows['aggregate_netcdf'].values
+            nan_results[int(weir)] = nan_rows["aggregate_netcdf"].values
 
         frequency = float(sum(results[weir] > 0) / nr_years)
         average_volume = sum(results[weir]) / nr_years
@@ -117,7 +117,7 @@ def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int
         results_file = netcdf_dir.parent / "nan_rows.json"
         with results_file.open("w") as f:
             json.dump(nan_results, f, indent=4, default=str)
-        
+
     return output
 
 
@@ -139,10 +139,10 @@ def download_results(
         if file.is_dir():
             shutil.rmtree(Path(results_dir, file))
 
-    aggregation_dir = results_dir / Path("aggregation_netcdfs")
+    aggregation_dir = results_dir / "aggregation_netcdfs"
     aggregation_dir.mkdir()
 
-    simulations_dir = results_dir / Path("simulations")
+    simulations_dir = results_dir / "simulations"
     remaining = [(sim["id"], sim["name"]) for sim in rain_event_simulations]
     crashes = []
     total = len(rain_event_simulations)
@@ -189,9 +189,7 @@ def download_results(
 
                     if debug and result.filename.startswith("log"):
                         "Download log files and unzip"
-                        sim_dir = simulations_dir / Path(
-                            f"{simulation_id}-isahw{isahw}"
-                        )
+                        sim_dir = simulations_dir / f"{simulation_id}-isahw{isahw}"
                         sim_dir.mkdir(parents=True)
                         download = api_call(
                             api.simulations_results_files_download,
@@ -242,7 +240,7 @@ def download_results(
     "--host",
     type=str,
     default="https://api.3di.live",
-    help="Host to run batch calculation on"
+    help="Host to run batch calculation on",
 )
 @click.option(
     "--password",
