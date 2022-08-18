@@ -73,38 +73,68 @@ def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int
     nc_files = [file for file in os.listdir(netcdf_dir) if file.endswith(".nc")]
     ga = GridH5AggregateResultAdmin(gridadmin, netcdf_dir / nc_files[0])
     weir_pks = ga.lines.weirs.content_pk
-    results = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
+    results_cum = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
+    results_cum_negative = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
+    results_cum_positive = pandas.DataFrame(columns=["aggregate_netcdf", *weir_pks])
     nan_results = {}
 
     # Get cumulative discharge for all weirs
     for i, aggregate_file in enumerate(nc_files):
         ga = GridH5AggregateResultAdmin(gridadmin, netcdf_dir / aggregate_file)
         weir_data = ga.lines.filter(content_type="v2_weir").only(
-            "content_pk", "content_type", "q_cum"
+            "content_pk",
+            "content_type",
+            "q_cum",
+            "q_cum_negative",
+            "q_cum_positive",
         )
         cumulative_discharge = [abs(x) for x in (weir_data.q_cum)[-1]]
-        results.loc[i] = [aggregate_file, *cumulative_discharge]
+        negative_discharge = [abs(x) for x in (weir_data.q_cum_negative)[-1]]
+        positive_discharge = [abs(x) for x in (weir_data.q_cum_positive)[-1]]
+        results_cum.loc[i] = [aggregate_file, *cumulative_discharge]
+        results_cum_negative.loc[i] = [aggregate_file, *negative_discharge]
+        results_cum_positive.loc[i] = [aggregate_file, *positive_discharge]
 
     # Find results for each weir
     output = pandas.DataFrame(
-        columns=["weir_id", "frequency", "average_volume", "t1", "t2", "t5", "t10"]
+        columns=[
+            "weir_id",
+            "frequency (active/year)",
+            "average_volume (m3/year)",
+            "negative_discharge_frequency (active/year)",
+            "average_negative_discharge (m3/year)",
+            "positive_discharge_frequency (active/year)",
+            "average_positive discharge (m3/year)",
+            "t1 (m3)",
+            "t2 (m3)",
+            "t5 (m3)",
+            "t10 (m3)",
+        ]
     )
 
-    for i, weir in enumerate(results.columns[1:]):
-        nan_rows = results[results[weir].isnull()]
+    for i, weir in enumerate(results_cum.columns[1:]):
+        nan_rows = results_cum[results_cum[weir].isnull()]
         if len(nan_rows) > 0:
             nan_results[int(weir)] = nan_rows["aggregate_netcdf"].values
 
-        frequency = float(sum(results[weir] > 0) / nr_years)
-        average_volume = sum(results[weir]) / nr_years
+        frequency = sum(results_cum[weir] > 0) / nr_years
+        average_volume = sum(results_cum[weir]) / nr_years
+        negative_discharge_freq = sum(results_cum_negative[weir] > 0) / nr_years
+        negative_discharge_vol = sum(results_cum_negative[weir]) / nr_years
+        positive_discharge_freq = sum(results_cum_positive[weir] > 0) / nr_years
+        positive_discharge_vol = sum(results_cum_positive[weir]) / nr_years
         weir_tx_list = [
-            *repetition_time_volumes(weir_results=results[weir], n=nr_years)
+            *repetition_time_volumes(weir_results=results_cum[weir], n=nr_years)
         ]
 
         output.loc[i] = [
             weir,
             frequency,
             average_volume,
+            negative_discharge_freq,
+            negative_discharge_vol,
+            positive_discharge_freq,
+            positive_discharge_vol,
             *weir_tx_list,
         ]
 
@@ -255,8 +285,21 @@ def download_results(
     default=False,
     help="Download simulation logs to debug potential issues [default: False]",
 )
+@click.option(
+    "-s",
+    "--skip-download",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Skip downloading (aggregation) result files [default: False]",
+)
 def process_results(
-    created_simulations: Path, user: str, host: str, password: str, debug: bool
+    created_simulations: Path,
+    user: str,
+    host: str,
+    password: str,
+    debug: bool,
+    skip_download: bool,
 ):
     """
     Download and process the results of the rain series simulations.
@@ -276,13 +319,14 @@ def process_results(
         with Path(created_simulations).open("r") as f:
             created_simulations = json.loads(f.read())
 
-        download_results(
-            api,
-            created_simulations["rain_event_simulations"],
-            results_dir,
-            created_simulations["threedimodel_id"],
-            debug,
-        )
+        if not skip_download:
+            download_results(
+                api,
+                created_simulations["rain_event_simulations"],
+                results_dir,
+                created_simulations["threedimodel_id"],
+                debug,
+            )
 
         # Calculate statistics
         batch_calculation_statistics(
