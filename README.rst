@@ -28,6 +28,8 @@ Usage
 
 To ensure the correct behaviour of this tool please go through the following steps:
 
+#. Make sure your v2_aggregation_settings table in the SQLite contains 3 entries for discharge: `cum`, `cum_negative`, and `cum_positive`. And all have `timestep` set to 3600.
+
 #. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below::
 
     0,5.0

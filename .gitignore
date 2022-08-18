@@ -38,6 +38,6 @@ coverage.xml
 docker-compose.override.yml
 
 # data
-rain_files
+rain_files*
 results*
-netcdf_rain_files
+netcdf_rain_files*

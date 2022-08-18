@@ -1,3 +1,5 @@
+from urllib.request import urlretrieve
+from venv import create
 import click
 import numpy as np
 import json
@@ -8,6 +10,8 @@ import netCDF4 as nc4
 
 from datetime import datetime
 from pathlib import Path
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
 from threedi_api_client.openapi.exceptions import ApiException
@@ -15,10 +19,12 @@ from threedi_api_client.openapi.models import (
     Action,
     FromTemplate,
     Progress,
+    Revision,
     SavedStateOverview,
     Simulation,
     SimulationStatus,
     Template,
+    ThreediModel,
     UploadEventFile,
 )
 from threedi_api_client.versions import V3BetaApi
@@ -29,6 +35,7 @@ from typing import (
 )
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
+REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
 
 
 def api_call(call, *args, **kwargs):
@@ -50,6 +57,48 @@ def printProgressBar(iteration, total, text, length=100):
     print(f"\r{text} |{bar}| {percent}% Completed", end="\r")
     if iteration == total:
         print()
+
+
+def download_sqlite(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
+    print("Downloading and validating sqlite...")
+    threedimodel: ThreediModel = api.threedimodels_read(threedimodel_id)
+    revision: Revision = api.schematisations_revisions_read(
+        threedimodel.revision_id,
+        schematisation_pk=threedimodel.schematisation_id,
+    )
+    if revision.sqlite is None or revision.sqlite.file.state != "uploaded":
+        raise ValueError("The revision has no SQLite.")
+
+    download = api.schematisations_revisions_sqlite_download(
+        threedimodel.revision_id,
+        schematisation_pk=threedimodel.schematisation_id,
+    )
+    path = results_dir / revision.sqlite.file.filename
+    urlretrieve(download.get_url, path)
+
+    return path
+
+
+def validate_sqlite(sqlite_path: Path):
+    engine = create_engine(f"sqlite:///{sqlite_path}")
+    session = Session(engine)
+
+    query = "SELECT timestep, aggregation_method FROM v2_aggregation_settings WHERE flow_variable='discharge'"
+    rows = [row for row in session.execute(query)]
+    timesteps = np.array([row[0] for row in rows])
+    aggregation_methods = set([row[1] for row in rows])
+
+    if not np.all(timesteps == 3600):
+        raise ValueError(
+            "All timestep fields for discharge in aggregation settings should be 3600."
+        )
+
+    if aggregation_methods != REQUIRED_AGGREGATION_METHODS:
+        raise ValueError(
+            "SQLite does not contain correct aggregation settings for discharge. "
+            f"Required aggregation settings are: {REQUIRED_AGGREGATION_METHODS}. "
+            f"Current aggregation settings: {aggregation_methods}"
+        )
 
 
 def create_simulation(
@@ -536,6 +585,9 @@ def create_rain_series_simulations(
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
+        sqlite_path = download_sqlite(api, threedimodel_id, results_dir)
+        validate_sqlite(sqlite_path)
+
         # Setup simulation and in dry state to create saved states
         print("Creating 3 day DWF simulation")
         simulation_dwf: Simulation = create_simulation(
