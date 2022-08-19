@@ -7,6 +7,8 @@ import os
 import shutil
 import pytz
 import netCDF4 as nc4
+import zipfile
+
 
 from datetime import datetime
 from pathlib import Path
@@ -76,6 +78,19 @@ def download_sqlite(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> 
     path = results_dir / revision.sqlite.file.filename
     urlretrieve(download.get_url, path)
 
+    if path.suffix.lower() == ".zip":
+        # Extract sqlite from zip
+        with path.open("rb") as f:
+            zf = zipfile.ZipFile(f)
+            for fn in zf.namelist():
+                if fn.lower().endswith(".sqlite"):
+                    zf.extract(fn, path=path.parent)
+                    return path.parent / fn
+            else:
+                raise FileNotFoundError(
+                    f"Could not find an .sqlite in zipfile {path}"
+                )
+            
     return path
 
 
