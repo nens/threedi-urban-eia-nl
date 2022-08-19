@@ -15,7 +15,6 @@ from pathlib import Path
 from threedi_api_client import ThreediApi
 from threedi_api_client.openapi.models import SimulationStatus
 from threedi_api_client.versions import V3BetaApi
-from time import sleep
 from typing import (
     Dict,
     List,
