@@ -38,6 +38,8 @@ from typing import (
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
+API_429_TIMEOUT = 60
+TIMEOUT = 5
 
 
 def api_call(call, *args, **kwargs):
@@ -45,7 +47,7 @@ def api_call(call, *args, **kwargs):
         result = call(*args, **kwargs)
     except ApiException as e:
         if e.status == 429:
-            sleep(30)
+            sleep(API_429_TIMEOUT)
             return api_call(call, *args, **kwargs)
         else:
             raise e
@@ -165,7 +167,7 @@ def await_simulation_completion(api: V3BetaApi, simulation: Simulation) -> None:
                 if "No progress" not in e.body:
                     raise e
             finally:
-                sleep(1)
+                sleep(TIMEOUT)
         else:
             return
 
@@ -408,7 +410,7 @@ def create_simulations_from_netcdf_rain_events(
                     f"Warning: error processing netcdf for simulation {simulation.id}.",
                     netcdf.file.state_description,
                 )
-            sleep(1.0)
+            sleep(TIMEOUT)
 
     return started_simulations
 
