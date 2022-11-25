@@ -551,10 +551,6 @@ def create_result_file(
     "results_dir",
     type=click.Path(exists=True, writable=True, path_type=Path),
 )
-@click.argument(
-    "user",
-    type=str,
-)
 @click.option(
     "-o",
     "--organisation",
@@ -570,7 +566,7 @@ def create_result_file(
     help="Host to run batch calculation on",
 )
 @click.option(
-    "--password",
+    "--apikey",
     prompt=True,
     hide_input=True,
 )
@@ -578,8 +574,7 @@ def create_rain_series_simulations(
     threedimodel_id: int,
     rain_files_dir: Path,
     results_dir: Path,
-    user: str,
-    password: str,
+    apikey: str,
     organisation: str,
     host: str,
 ):
@@ -597,8 +592,7 @@ def create_rain_series_simulations(
     """
     config = {
         "THREEDI_API_HOST": host,
-        "THREEDI_API_USERNAME": user,
-        "THREEDI_API_PASSWORD": password,
+        "THREEDI_API_PERSONAL_API_TOKEN": apikey,
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
@@ -629,18 +623,18 @@ def create_rain_series_simulations(
         # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
-        # netcdfs = convert_to_netcdf(rain_files_dir)
-        # rain_event_simulations = create_simulations_from_netcdf_rain_events(
-        #     api,
-        #     saved_states,
-        #     netcdfs,
-        #     threedimodel_id,
-        #     organisation,
-        # )
-
-        rain_event_simulations = create_simulations_from_rain_events(
-            api, saved_states, threedimodel_id, organisation, rain_files_dir
+        netcdfs = convert_to_netcdf(rain_files_dir)
+        rain_event_simulations = create_simulations_from_netcdf_rain_events(
+            api,
+            saved_states,
+            netcdfs,
+            threedimodel_id,
+            organisation,
         )
+
+        # rain_event_simulations = create_simulations_from_rain_events(
+        #     api, saved_states, threedimodel_id, organisation, rain_files_dir
+        # )
 
         # write results to out_path
         create_result_file(

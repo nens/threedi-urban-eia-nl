@@ -260,10 +260,6 @@ def download_results(
     "created_simulations",
     type=click.Path(exists=True, readable=True, path_type=Path),
 )
-@click.argument(
-    "user",
-    type=str,
-)
 @click.option(
     "-h",
     "--host",
@@ -272,7 +268,7 @@ def download_results(
     help="Host to run batch calculation on",
 )
 @click.option(
-    "--password",
+    "--apikey",
     prompt=True,
     hide_input=True,
 )
@@ -294,9 +290,8 @@ def download_results(
 )
 def process_results(
     created_simulations: Path,
-    user: str,
     host: str,
-    password: str,
+    apikey: str,
     debug: bool,
     skip_download: bool,
 ):
@@ -308,8 +303,7 @@ def process_results(
     """
     config = {
         "THREEDI_API_HOST": host,
-        "THREEDI_API_USERNAME": user,
-        "THREEDI_API_PASSWORD": password,
+        "THREEDI_API_PERSONAL_API_TOKEN": apikey,
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi

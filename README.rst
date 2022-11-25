@@ -55,9 +55,9 @@ Created Files and Directories
 Example
 ------------
 
-  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> <username> -o <organisation (optional)> -h <host (optional)>
+  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> -o <organisation (optional)> -h <host (optional)>
 
-  $ process-rain-series-results <created simulations json file> <username> -h <host (optional)> -d <sets debug flag to True>
+  $ process-rain-series-results <created simulations json file> -h <host (optional)> -d <sets debug flag to True> -s <skips downloading result files>
 
 Example command::
 
