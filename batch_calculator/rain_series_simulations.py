@@ -551,10 +551,6 @@ def create_result_file(
     "results_dir",
     type=click.Path(exists=True, writable=True, path_type=Path),
 )
-@click.argument(
-    "user",
-    type=str,
-)
 @click.option(
     "-o",
     "--organisation",
@@ -570,7 +566,7 @@ def create_result_file(
     help="Host to run batch calculation on",
 )
 @click.option(
-    "--password",
+    "--apikey",
     prompt=True,
     hide_input=True,
 )
@@ -578,8 +574,7 @@ def create_rain_series_simulations(
     threedimodel_id: int,
     rain_files_dir: Path,
     results_dir: Path,
-    user: str,
-    password: str,
+    apikey: str,
     organisation: str,
     host: str,
 ):
@@ -597,8 +592,7 @@ def create_rain_series_simulations(
     """
     config = {
         "THREEDI_API_HOST": host,
-        "THREEDI_API_USERNAME": user,
-        "THREEDI_API_PASSWORD": password,
+        "THREEDI_API_PERSONAL_API_TOKEN": apikey,
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
