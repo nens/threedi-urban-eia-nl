@@ -623,18 +623,18 @@ def create_rain_series_simulations(
         # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
-        netcdfs = convert_to_netcdf(rain_files_dir)
-        rain_event_simulations = create_simulations_from_netcdf_rain_events(
-            api,
-            saved_states,
-            netcdfs,
-            threedimodel_id,
-            organisation,
-        )
-
-        # rain_event_simulations = create_simulations_from_rain_events(
-        #     api, saved_states, threedimodel_id, organisation, rain_files_dir
+        # netcdfs = convert_to_netcdf(rain_files_dir)
+        # rain_event_simulations = create_simulations_from_netcdf_rain_events(
+        #     api,
+        #     saved_states,
+        #     netcdfs,
+        #     threedimodel_id,
+        #     organisation,
         # )
+
+        rain_event_simulations = create_simulations_from_rain_events(
+            api, saved_states, threedimodel_id, organisation, rain_files_dir
+        )
 
         # write results to out_path
         create_result_file(
