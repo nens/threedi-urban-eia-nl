@@ -41,7 +41,7 @@ Changelog = "https://github.com/nens/threedi-urban-eia-nl/blob/master/CHANGES.rs
 packages = ["batch_calculator"]
 
 [tool.setuptools.dynamic]
-version = {attr = "batch_calculator/__version__"}
+version = {attr = "batch_calculator.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "--black --flakes --cov --cache-clear batch_calculator"
