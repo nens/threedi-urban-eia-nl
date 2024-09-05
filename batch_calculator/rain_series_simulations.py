@@ -12,7 +12,10 @@ import zipfile
 
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy import create_engine
+from sqlalchemy import (
+    create_engine,
+    text,
+)
 from sqlalchemy.orm import Session
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
@@ -100,8 +103,14 @@ def validate_sqlite(sqlite_path: Path):
     engine = create_engine(f"sqlite:///{sqlite_path}")
     session = Session(engine)
 
-    query = "SELECT timestep, aggregation_method FROM aggregation_settings WHERE flow_variable='discharge'"
-    rows = [row for row in session.execute(query)]
+    database_schema_version = session.execute(text("SELECT version_num FROM schema_version;")).scalar()
+
+    if int(database_schema_version) < 222:
+        query = "SELECT timestep, aggregation_method FROM v2_aggregation_settings WHERE flow_variable='discharge'"
+    else:
+        query = "SELECT timestep, aggregation_method FROM aggregation_settings WHERE flow_variable='discharge'"
+
+    rows = [row for row in session.execute(text(query))]
     timesteps = np.array([row[0] for row in rows])
     aggregation_methods = set([row[1] for row in rows])
 
