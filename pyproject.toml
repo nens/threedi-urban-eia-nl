@@ -3,7 +3,7 @@ name = "batch-calculator"
 dynamic = ["version"]
 description = "3Di batch calculations"
 readme = "README.rst"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     { name = "Daan van Ingen", email = "daan.vaningen@nelen-schuurmans.nl" },
 ]
@@ -11,6 +11,7 @@ keywords = []
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python",
+    "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
     "click",
@@ -34,6 +35,7 @@ run-rain-series-simulations = "batch_calculator.rain_series_simulations:create_r
 
 [project.urls]
 Repository = "https://github.com/nens/threedi-urban-eia-nl"
+Changelog = "https://github.com/nens/threedi-urban-eia-nl/blob/master/CHANGES.rst"
 
 [tool.setuptools]
 packages = ["batch_calculator"]
