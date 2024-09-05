@@ -11,6 +11,12 @@ install_requires = [
     "threedi-api-client>=4.0.0",
     "threedigrid>=1.0.16",
 ]
+tests_require = [
+    "pytest",
+    "pytest-cov",
+    "pytest-black",
+    "pytest-flakes",
+]
 
 setup(
     name="batch-calculator",
@@ -28,6 +34,9 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
+    extras_require={
+        "test": tests_require
+    },
     entry_points={
         "console_scripts": [
             "run-rain-series-simulations = batch_calculator.rain_series_simulations:create_rain_series_simulations",
