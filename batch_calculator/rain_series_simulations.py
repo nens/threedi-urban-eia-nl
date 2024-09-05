@@ -1,5 +1,4 @@
 from urllib.request import urlretrieve
-from venv import create
 import click
 import numpy as np
 import json
