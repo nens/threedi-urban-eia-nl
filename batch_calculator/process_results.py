@@ -133,9 +133,10 @@ def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int
 
     if len(nan_results) > 0:
         print(
-            "WARNING: one or more weirs found which have NaN results in their cumulative "
-            "discharge. Please check the nan_rows.json file for more information. "
-            "This file contains weir id and netcdf file where the NaN values are found. "
+            "WARNING: one or more weirs found which have NaN results in their "
+            "cumulative discharge. Please check the nan_rows.json file for more "
+            "information. This file contains weir id and netcdf file where the NaN "
+            "values are found. "
         )
         results_file = netcdf_dir.parent / "nan_rows.json"
         with results_file.open("w") as f:

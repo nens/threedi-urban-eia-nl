@@ -98,9 +98,17 @@ def validate_sqlite(sqlite_path: Path):
     ).scalar()
 
     if int(database_schema_version) < 222:
-        query = "SELECT timestep, aggregation_method FROM v2_aggregation_settings WHERE flow_variable='discharge'"
+        query = """
+        SELECT timestep, aggregation_method
+        FROM v2_aggregation_settings
+        WHERE flow_variable='discharge';
+        """
     else:
-        query = "SELECT timestep, aggregation_method FROM aggregation_settings WHERE flow_variable='discharge'"
+        query = """
+        SELECT timestep, aggregation_method
+        FROM aggregation_settings
+        WHERE flow_variable='discharge';
+        """
 
     rows = [row for row in session.execute(text(query))]
     timesteps = np.array([row[0] for row in rows])
@@ -285,7 +293,11 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
         #     data=np.array([0]),
         #     dtype=np.int32,
         # )
-        # # one = netcdf.create_dataset("one", np.array([0.0], dtype=np.float64), dtype=np.float64)
+        # # one = netcdf.create_dataset(
+        # #     "one",
+        # #     np.array([0.0], dtype=np.float64),
+        # #     dtype=np.float64
+        # # )
         # time = netcdf.create_dataset("time", data=time, dtype=np.float64)
         # values = netcdf.create_dataset(
         #     "values", data=values_converted, dtype=np.float64
@@ -424,9 +436,9 @@ def create_simulations_from_rain_events(
     rain_files_dir: Path,
 ) -> List[Simulation]:
     """
-    Read start time from rain files filename and create simulations with the corresponding
-    initial state from the DWF runs. Create timeseries rain event from file data.
-    Save created simulations to JSON as fallback.
+    Read start time from rain files filename and create simulations with the
+    corresponding initial state from the DWF runs. Create timeseries rain event
+    from file data. Save created simulations to JSON as fallback.
     """
     rain_event_simulations = []
     warnings = []
@@ -584,7 +596,8 @@ def create_rain_series_simulations(
     Batch rain series calculation consists of 2 parts.
     First part:
         - run simulation in dry state for 3 days
-        - create saved states for every hour in day 3 which will be used as start state for the rain series simulations
+        - create saved states for every hour in day 3 which will be used as
+          start state for the rain series simulations
 
     \b
     Second part:
