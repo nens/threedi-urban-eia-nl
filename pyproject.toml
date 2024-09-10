@@ -39,6 +39,7 @@ version = {attr = "threedi_urban_eia_nl.__version__"}
 
 [tool.zest-releaser]
 release = false
+python-file-with-version = "threedi_urban_eia_nl/__init__.py"
 
 [tool.isort]
 profile = "black"
