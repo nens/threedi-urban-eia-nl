@@ -46,7 +46,7 @@ Created Files and Directories
 
 - aggregation_netcdf, directory containing simulation aggregate result data
 - simulations, directory containing simulation log data (use --debug option)
-- batch_calculator_statistics.csv, batch calculation result
+- threedi_urban_eia_nl_statistics.csv, batch calculation result
 - crashed_simulations.json, IDs of crashed simulations (optional)
 - created_simulations_<date>.json, information about created simulations, serves as input file for process-rain-series-results
 - gridadmin.h5, necessary for calculation of batch statistics

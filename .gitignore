@@ -4,7 +4,7 @@
 *.swp
 *.pyc
 
-batch_calculator/huidig
+threedi_urban_eia_nl/huidig
 # Packages/buildout/pip/pipenv
 *.egg
 *.egg-info
