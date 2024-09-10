@@ -1,4 +1,4 @@
-Changelog of batch-calculator
+Changelog of threedi-urban-eia-nl
 ===================================================
 
 

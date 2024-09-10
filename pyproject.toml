@@ -1,5 +1,5 @@
 [project]
-name = "batch-calculator"
+name = "threedi-urban-eia-nl"
 dynamic = ["version"]
 description = "3Di batch calculations"
 readme = "README.rst"

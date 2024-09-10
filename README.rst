@@ -1,4 +1,4 @@
-batch-calculator
+threedi-urban-eia-nl
 ==========================================
 
 Introduction
@@ -7,21 +7,9 @@ This tool can be used for reeksberekeningen.
 
 Installation
 ------------
-The easiest way to install the tool is through cloning the repository.
+The easiest way to install the tool is through PyPi.
 
-For installation on the utr-con-task-01.nens.local use this (you need administrator rights for this!):
-
-1. First copy this repository to your workdir on your local machine, so that you can access it on the linux-machine
-
-2. Then copy the batch-calculator to the root directory of the linux-machine::
-
-    $ sudo su
-    $ rm -r /root/batch-calculator
-    $ cp /mnt/workdir/A_vtVeld/batch-calculator /root/ -r
-
-3. Then install or upgrade the batch-calculator through a local installation procedure::
-
-    $ pip3 install -e /root/batch-calculator --upgrade
+    $ python3 -m pip install threedi-urban-eia-nl
 
 Usage
 -----
@@ -37,7 +25,6 @@ To ensure the correct behaviour of this tool please go through the following ste
     60,0.0
 #. Create an output folder in which the result files will be stored.
 #. Find the "id" of your model in the Threedi Model List: https://api.3di.live/v3/threedimodels/
-#. Open a command window and navigate to the batch-calculator folder.
 #. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
 
