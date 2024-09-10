@@ -1,7 +1,7 @@
 # Include docs in the root.
 include *.rst
 # Include everything in our project directory.
-graft batch_calculator
+graft threedi_urban_eia_nl
 # Exclude byte-compiled code
 global-exclude __pycache__
 global-exclude *.py[co]

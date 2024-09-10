@@ -19,21 +19,23 @@ dependencies = [
     "pandas",
     "threedi-api-client>=4.0.0",
     "threedigrid>=1.0.16",
+    "numpy<2",
+    "SQLAlchemy",
 ]
 
 [project.scripts]
-process-rain-series-results = "batch_calculator.process_results:process_results"
-run-rain-series-simulations = "batch_calculator.rain_series_simulations:create_rain_series_simulations"
+process-rain-series-results = "threedi_urban_eia_nl.process_results:process_results"
+run-rain-series-simulations = "threedi_urban_eia_nl.rain_series_simulations:create_rain_series_simulations"
 
 [project.urls]
 Repository = "https://github.com/nens/threedi-urban-eia-nl"
 Changelog = "https://github.com/nens/threedi-urban-eia-nl/blob/master/CHANGES.rst"
 
 [tool.setuptools]
-packages = ["batch_calculator"]
+packages = ["threedi_urban_eia_nl"]
 
 [tool.setuptools.dynamic]
-version = {attr = "batch_calculator.__version__"}
+version = {attr = "threedi_urban_eia_nl.__version__"}
 
 [tool.zest-releaser]
 release = false
