@@ -37,3 +37,7 @@ version = {attr = "batch_calculator.__version__"}
 
 [tool.zest-releaser]
 release = false
+
+[tool.isort]
+profile = "black"
+force_alphabetical_sort_within_sections = true

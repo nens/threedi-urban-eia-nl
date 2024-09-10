@@ -1,20 +1,18 @@
-from urllib.request import urlretrieve
-import click
-import numpy as np
 import json
 import os
 import shutil
-import pytz
-import netCDF4 as nc4
 import zipfile
-
-
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy import (
-    create_engine,
-    text,
-)
+from time import sleep
+from typing import Dict, List
+from urllib.request import urlretrieve
+
+import click
+import netCDF4 as nc4
+import numpy as np
+import pytz
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
@@ -32,11 +30,6 @@ from threedi_api_client.openapi.models import (
     UploadEventFile,
 )
 from threedi_api_client.versions import V3BetaApi
-from time import sleep
-from typing import (
-    Dict,
-    List,
-)
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
