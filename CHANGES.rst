@@ -2,7 +2,7 @@ Changelog of threedi-urban-eia-nl
 ===================================================
 
 
-0.0.2 (unreleased)
+0.0.2 (2024-09-10)
 ------------------
 
 - Publish to PyPI via OIDC
