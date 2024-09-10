@@ -2,8 +2,8 @@ Changelog of threedi-urban-eia-nl
 ===================================================
 
 
-0.1 (unreleased)
-----------------
+0.0.1 (2024-09-10)
+------------------
 
 - Initial project structure created with cookiecutter and
   https://github.com/nens/cookiecutter-python-template
