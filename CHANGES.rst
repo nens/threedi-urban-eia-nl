@@ -5,7 +5,9 @@ Changelog of threedi-urban-eia-nl
 0.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Publish to PyPI via OIDC
+
+- Update all github action versions.
 
 
 0.0.1 (2024-09-10)
