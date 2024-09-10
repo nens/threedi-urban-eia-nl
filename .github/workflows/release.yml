@@ -39,8 +39,8 @@ jobs:
           path: ./dist/*
           retention-days: 5
 
-  publish:
-    name: Publish on GitHub and PyPI
+  github-publish:
+    name: Publish on GitHub
     needs: [build]
     runs-on: ubuntu-latest
     # release on every tag
@@ -55,7 +55,22 @@ jobs:
         id: upload-release-asset
         uses: softprops/action-gh-release@v2
 
+  pypi-publish:
+    name: Publish on PyPI
+    needs: [build, github-publish]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/threedi-urban-eia-nl
+    # release on every tag
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifact
+          path: dist
+
       - name: Upload Release Assets to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_UPLOAD_TOKEN }}
