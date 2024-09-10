@@ -1,25 +1,20 @@
-import click
 import json
 import os
-import pandas
 import shutil
 import zipfile
-
-from batch_calculator.rain_series_simulations import (
-    printProgressBar,
-    api_call,
-)
 from math import floor
 from pathlib import Path
+from typing import Dict, List
+from urllib.request import urlretrieve
+
+import click
+import pandas
 from threedi_api_client import ThreediApi
 from threedi_api_client.openapi.models import SimulationStatus
 from threedi_api_client.versions import V3BetaApi
-from typing import (
-    Dict,
-    List,
-)
 from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
-from urllib.request import urlretrieve
+
+from batch_calculator.rain_series_simulations import api_call, printProgressBar
 
 
 def repetition_time_volumes(weir_results, n, stats=[1, 2, 5, 10]):
@@ -138,9 +133,10 @@ def batch_calculation_statistics(netcdf_dir: Path, gridadmin: str, nr_years: int
 
     if len(nan_results) > 0:
         print(
-            "WARNING: one or more weirs found which have NaN results in their cumulative "
-            "discharge. Please check the nan_rows.json file for more information. "
-            "This file contains weir id and netcdf file where the NaN values are found. "
+            "WARNING: one or more weirs found which have NaN results in their "
+            "cumulative discharge. Please check the nan_rows.json file for more "
+            "information. This file contains weir id and netcdf file where the NaN "
+            "values are found. "
         )
         results_file = netcdf_dir.parent / "nan_rows.json"
         with results_file.open("w") as f:

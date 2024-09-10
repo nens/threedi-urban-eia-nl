@@ -7,3 +7,7 @@ Changelog of batch-calculator
 
 - Initial project structure created with cookiecutter and
   https://github.com/nens/cookiecutter-python-template
+
+- Move to pyproject.toml
+
+- Clean up workflows and project structure

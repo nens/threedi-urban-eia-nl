@@ -1,0 +1,43 @@
+[project]
+name = "batch-calculator"
+dynamic = ["version"]
+description = "3Di batch calculations"
+readme = "README.rst"
+license = {text = "MIT"}
+authors = [
+    { name = "Daan van Ingen", email = "daan.vaningen@nelen-schuurmans.nl" },
+]
+keywords = []
+classifiers = [
+    "Framework :: Django",
+    "Programming Language :: Python",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "click",
+    "netCDF4",
+    "pandas",
+    "threedi-api-client>=4.0.0",
+    "threedigrid>=1.0.16",
+]
+
+[project.scripts]
+process-rain-series-results = "batch_calculator.process_results:process_results"
+run-rain-series-simulations = "batch_calculator.rain_series_simulations:create_rain_series_simulations"
+
+[project.urls]
+Repository = "https://github.com/nens/threedi-urban-eia-nl"
+Changelog = "https://github.com/nens/threedi-urban-eia-nl/blob/master/CHANGES.rst"
+
+[tool.setuptools]
+packages = ["batch_calculator"]
+
+[tool.setuptools.dynamic]
+version = {attr = "batch_calculator.__version__"}
+
+[tool.zest-releaser]
+release = false
+
+[tool.isort]
+profile = "black"
+force_alphabetical_sort_within_sections = true
