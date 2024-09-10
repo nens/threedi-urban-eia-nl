@@ -9,12 +9,11 @@ from urllib.request import urlretrieve
 
 import click
 import pandas
+from batch_calculator.rain_series_simulations import api_call, printProgressBar
 from threedi_api_client import ThreediApi
 from threedi_api_client.openapi.models import SimulationStatus
 from threedi_api_client.versions import V3BetaApi
 from threedigrid.admin.gridresultadmin import GridH5AggregateResultAdmin
-
-from batch_calculator.rain_series_simulations import api_call, printProgressBar
 
 
 def repetition_time_volumes(weir_results, n, stats=[1, 2, 5, 10]):
