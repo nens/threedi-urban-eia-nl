@@ -15,7 +15,7 @@ Aandachtspunten 3Di-model
 
 Let op de volgende zaken:
 
-* De pompen van bergbezinkvoorzieningen zijn ook mee gemodelleerd.
+* De pompen van bergbezinkvoorzieningen zijn ook geschematiseerd.
 
 * De DWA-belasting varieert over de tijd volgens het standaardverloop.
 
@@ -28,6 +28,51 @@ Let op de volgende zaken:
   * Bergbezinkvoorziening (externe overstort): CZV = Gemiddeld overstortvolume * 0.25 * 0.55
   
 De berekening van de herhalingstijden wordt hier verder toegelicht: https://www.riool.net/presenteren-van-milieutechnisch-functioneren
+
+Aggregation settings
+####################
+
+Om de statistieken over de simulaties te berekenen moeten de onderstaande aggregation settings zijn gedefinieerd. 
+
++---------------+--------------------+-----------+
+| Flow variable | Aggregation method | Time step |
++---------------+--------------------+-----------+
+| discharge     | cum                | 3600      |
++---------------+--------------------+-----------+
+| discharge     | cum_positive       | 3600      |
++---------------+--------------------+-----------+
+| discharge     | cum_negative       | 3600      |
++---------------+--------------------+-----------+
+
+Dit betreft het cumulatieve volume dat over de overstort gaat, het cumulatieve volume in positieve richting en het cumulatieve volume in negatieve richting.
+
+Hiervoor kan je de volgende SQL gebruiken::
+
+    INSERT INTO aggregation_settings (flow_variable, aggregation_method, time_step)
+    VALUES
+        ('discharge', 'cum', '3600'),
+        ('discharge', 'cum_positive', '3600'),
+        ('discharge', 'cum_negative', '3600')
+    ;
+
+
+--------------------------------
+
+
+
+INSERT INTO v2_aggregation_settings (timestep, var_name, global_settings_id, aggregation_method, aggregation_in_space, flow_variable)
+
+VALUES (3600, 'overstortvolume_neg', 1, 'cum_negative', FALSE, 'discharge');
+
+--------------------------------
+
+
+
+INSERT INTO v2_aggregation_settings (timestep, var_name, global_settings_id, aggregation_method, aggregation_in_space, flow_variable)
+
+VALUES (3600, 'overstortvolume_pos', 1, 'cum_positive', FALSE, 'discharge');
+
+
 
 Installatie
 -----------
