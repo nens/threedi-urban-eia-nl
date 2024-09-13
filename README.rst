@@ -1,15 +1,40 @@
 threedi-urban-eia-nl
-==========================================
+====================
 
-Introduction
-------------
-This tool can be used for reeksberekeningen.
+Note for non-Dutch speakers
+---------------------------
 
-Installation
-------------
-The easiest way to install the tool is through PyPi.
+This package is intended for environmental impact analysis of sewerage systems in the Netherlands. It follows the standard procedures that are prescribed for such analyses in the Netherlands. As such, it is not useful for applications outside of the Netherlands. For this reason, the rest of the documentation is in Dutch.
 
-    $ python3 -m pip install threedi-urban-eia-nl
+Inleiding
+---------
+Voor de analyse van het milieutechnisch functioneren zoals beschreven in de Kennisbank Stedelijk Water van Stichting Rioned wordt een standaardreeks buien doorgerekend. Dit python pakketje maakt het mogelijk om deze deze reeksberekeningen met 3Di uit te voeren. Met behulp van een reeksberekening bepaal je het milieutechnisch functioneren van overstorten. Bij de milieutechnische toetsing ligt de focus op de vuilemissies en overstortfrequenties van overstorten. De doorgerekende reeks is doorgaans een selectie van buien over de periode van 1955 - 1964. Voor meer achtergrondinformatie zie: https://www.riool.net/standaardneerslagreeks
+
+Aandachtspunten 3Di-model
+-------------------------
+
+Let op de volgende zaken:
+
+* De pompen van bergbezinkvoorzieningen zijn ook mee gemodelleerd.
+
+* De DWA-belasting varieert over de tijd volgens het standaardverloop.
+
+* Van de externe overstorten (ook van de bergbezinkvoorzieningen) worden de volgende resultaten verwacht (let op bij dubbele kunstwerken).
+
+  * Overstortfrequentie [per jaar]
+  * Gemiddeld overstortvolume [m3/jaar]
+  * Chemisch zuurstof verbruik (CZV) [kg CZV/jaar]
+  * Externe overstort: CZV = Gemiddeld overstortvolume * 0.25
+  * Bergbezinkvoorziening (externe overstort): CZV = Gemiddeld overstortvolume * 0.25 * 0.55
+  
+De berekening van de herhalingstijden wordt hier verder toegelicht: https://www.riool.net/presenteren-van-milieutechnisch-functioneren
+
+Installatie
+-----------
+
+De eenvoudigste manier om `threedi-urban-eia-nl` te installeren is met ``pip``. Open een command line interface in het python environment waar je in wilt werken, en voer het volgende commando uit:
+
+    ``pip install threedi-urban-eia-nl``
 
 Usage
 -----
