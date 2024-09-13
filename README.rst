@@ -8,7 +8,7 @@ This package is intended for environmental impact analysis of sewerage systems i
 
 Inleiding
 ---------
-Voor de analyse van het milieutechnisch functioneren zoals beschreven in de Kennisbank Stedelijk Water van Stichting Rioned wordt een standaardreeks buien doorgerekend. Dit python pakketje maakt het mogelijk om deze deze reeksberekeningen met 3Di uit te voeren. Met behulp van een reeksberekening bepaal je het milieutechnisch functioneren van overstorten. Bij de milieutechnische toetsing ligt de focus op de vuilemissies en overstortfrequenties van overstorten. De doorgerekende reeks is doorgaans een selectie van buien over de periode van 1955 - 1964. Voor meer achtergrondinformatie zie: https://www.riool.net/standaardneerslagreeks
+Voor de analyse van het milieutechnisch functioneren zoals beschreven in de Kennisbank Stedelijk Water van Stichting Rioned wordt een standaardreeks buien doorgerekend. Met ``threedi-urban-eia-nl`` kan je via de command line of met Python deze neerslagreeks met 3Di door te rekenen. Met behulp van een reeksberekening bepaal je het milieutechnisch functioneren van overstorten. Bij de milieutechnische toetsing ligt de focus op de vuilemissies en overstortfrequenties van overstorten. De doorgerekende reeks is doorgaans een selectie van buien over de periode van 1955 - 1964. Voor meer achtergrondinformatie zie: https://www.riool.net/standaardneerslagreeks
 
 Aandachtspunten 3Di-model
 -------------------------
@@ -57,7 +57,7 @@ Zet de output time step ook hoog (bv 3600) omdat je anders erg grote results_3di
 Installatie
 -----------
 
-De eenvoudigste manier om `threedi-urban-eia-nl` te installeren is met ``pip``. Open een command line interface in het python environment waar je in wilt werken, en voer het volgende commando uit:
+De eenvoudigste manier om `threedi-urban-eia-nl` te installeren is met ``pip``. Open (met administrator rechten) een command line interface in het python environment waar je in wilt werken, en voer het volgende commando uit:
 
     ``pip install threedi-urban-eia-nl``
 
