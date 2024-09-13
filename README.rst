@@ -61,8 +61,8 @@ De eenvoudigste manier om `threedi-urban-eia-nl` te installeren is met ``pip``. 
 
     ``pip install threedi-urban-eia-nl``
 
-Usage
------
+Gebruikershandleiding
+---------------------
 
 To ensure the correct behaviour of this tool please go through the following steps:
 
@@ -76,17 +76,6 @@ To ensure the correct behaviour of this tool please go through the following ste
 #. On the command line, run ``run-rain-series-simulations --help`` to see which arguments you need to specify.
 #. On the command line, run ``process-rain-series-results --help`` to see which arguments you need to specify.
 
-Created Files and Directories
------------------------------
-
-- aggregation_netcdf, directory containing simulation aggregate result data
-- simulations, directory containing simulation log data (use --debug option)
-- threedi_urban_eia_nl_statistics.csv, batch calculation result
-- crashed_simulations.json, IDs of crashed simulations (optional)
-- created_simulations_<date>.json, information about created simulations, serves as input file for process-rain-series-results
-- gridadmin.h5, necessary for calculation of batch statistics
-- nan_rows.json, information about weirs that contain NaN data in their cumulative discharge (optional)
-
 Example
 -------
 
@@ -99,4 +88,32 @@ Example command::
   $ run-rain-series-simulations 12345 rain_files/ results/ user.name
 
   $ process-rain-series-results results/created_simulations.json user.name
+
+Werking
+-------
+
+De reeksberekening bestaat uit twee fases.
+
+Eerste fase:
+
+* Het model wordt 3 dagen droog doorgerekend
+
+* Voor elk uur van dag 3 wordt een ``saved state`` aangemaakt, die worden gebruikt als start van de buien die in fase 2 worden doorgerekend
+
+Tweede fase:
+
+* Voor elke opgegeven bui wordt een simulatie gestart
+
+* De bestandsnaam geeft de start- en eindtijd van de neerslaggebeurtenis weer
+
+Created Files and Directories
+-----------------------------
+
+- aggregation_netcdf, directory containing simulation aggregate result data
+- simulations, directory containing simulation log data (use --debug option)
+- threedi_urban_eia_nl_statistics.csv, batch calculation result
+- crashed_simulations.json, IDs of crashed simulations (optional)
+- created_simulations_<date>.json, information about created simulations, serves as input file for process-rain-series-results
+- gridadmin.h5, necessary for calculation of batch statistics
+- nan_rows.json, information about weirs that contain NaN data in their cumulative discharge (optional)
 
