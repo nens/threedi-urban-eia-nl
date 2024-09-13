@@ -29,9 +29,6 @@ Let op de volgende zaken:
   
 De berekening van de herhalingstijden wordt hier verder toegelicht: https://www.riool.net/presenteren-van-milieutechnisch-functioneren
 
-Aggregation settings
-####################
-
 Om de statistieken over de simulaties te berekenen moeten de onderstaande aggregation settings zijn gedefinieerd. 
 
 +---------------+--------------------+-----------+
@@ -55,24 +52,7 @@ Hiervoor kan je de volgende SQL gebruiken::
         ('discharge', 'cum_negative', '3600')
     ;
 
-
---------------------------------
-
-
-
-INSERT INTO v2_aggregation_settings (timestep, var_name, global_settings_id, aggregation_method, aggregation_in_space, flow_variable)
-
-VALUES (3600, 'overstortvolume_neg', 1, 'cum_negative', FALSE, 'discharge');
-
---------------------------------
-
-
-
-INSERT INTO v2_aggregation_settings (timestep, var_name, global_settings_id, aggregation_method, aggregation_in_space, flow_variable)
-
-VALUES (3600, 'overstortvolume_pos', 1, 'cum_positive', FALSE, 'discharge');
-
-
+Zet de output time step ook hoog (bv 3600) omdat je anders erg grote results_3di.nc NetCDFs krijgt.
 
 Installatie
 -----------
@@ -86,17 +66,15 @@ Usage
 
 To ensure the correct behaviour of this tool please go through the following steps:
 
-#. Make sure your aggregation_settings table in the SQLite contains 3 entries for discharge: `cum`, `cum_negative`, and `cum_positive`. And all have `timestep` set to 3600.
-
 #. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below::
 
     0,5.0
     30,1.5
     60,0.0
 #. Create an output folder in which the result files will be stored.
-#. Find the "id" of your model in the Threedi Model List: https://api.3di.live/v3/threedimodels/
-#. Run ``$ run-rain-series-simulations --help`` to see which arguments you need to specify.
-#. Run ``$ process-rain-series-results --help`` to see which arguments you need to specify.
+#. Find the ID of your 3Di model on 3Di Management
+#. On the command line, run ``run-rain-series-simulations --help`` to see which arguments you need to specify.
+#. On the command line, run ``process-rain-series-results --help`` to see which arguments you need to specify.
 
 Created Files and Directories
 -----------------------------
@@ -110,15 +88,15 @@ Created Files and Directories
 - nan_rows.json, information about weirs that contain NaN data in their cumulative discharge (optional)
 
 Example
-------------
+-------
 
-  $ run-rain-series-simulations <ThreediModel ID> <rain files dir> <results dir> -o <organisation (optional)> -h <host (optional)>
+  $ run-rain-series-simulations <3Di Model ID> <rain files dir> <results dir> -o <organisation (optional)> -h <host (optional)>
 
   $ process-rain-series-results <created simulations json file> -h <host (optional)> -d <sets debug flag to True> -s <skips downloading result files>
 
 Example command::
 
-  $ run-rain-series-simulations 12345 rain_files/ results/ daan.vaningen
+  $ run-rain-series-simulations 12345 rain_files/ results/ user.name
 
-  $ process-rain-series-results results/created_simulations.json daan.vaningen
+  $ process-rain-series-results results/created_simulations.json user.name
 
