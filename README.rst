@@ -114,7 +114,11 @@ Aangemaakte bestanden en mappen
 
 - aggregation_netcdf, map met geaggregeerde resultaten van de simulatie
 - simulations, map met simulatieloggegevens (gebruik de optie --debug)
-- threedi_urban_eia_nl_statistics.csv, batchberekeningsresultaat
+- threedi_urban_eia_nl_statistics.csv, batchberekeningsresultaat. Het bevat de volgende kolommen:
+    - weir_id
+    - frequency: hoe vaak gemiddeld per jaar een overstort plaats vindt (totaal aantal overstortingen/10 of 25 jaar. Afhankelijk of de reeks over 10 of over 25 jaar is berekend)
+    - average_volume: het gemiddelde overstort volume per jaar (totaal overstort volume/10 jaar of 25 jaar )
+    - T=1, T=2, T=5 en T=10: volume wat je kan verwachten per herhalingstijd
 - crashed_simulations.json, ID's van gecrashte simulaties (optioneel)
 - create_simulations_<datum>.json, informatie over uitgevoerde simulaties, dient als invoerbestand voor ``proces-rain-series-results``
 - gridadmin.h5, noodzakelijk voor berekening van batchstatistieken
