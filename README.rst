@@ -64,26 +64,29 @@ De eenvoudigste manier om `threedi-urban-eia-nl` te installeren is met ``pip``. 
 Gebruikershandleiding
 ---------------------
 
-To ensure the correct behaviour of this tool please go through the following steps:
+Doorloop de volgende stappen om ervoor te zorgen dat deze tool correct werkt:
 
-#. Create a folder with all the rain files you want to use in your simulations. These rain files should be in 'min,mm'-format, where min is the timestep in minutes and mm is the amount of rain that falls during the timestep in millimeters. Each timestep is seperated by a newline like in the example below::
+#. Controleer de schematisatie en simulatie-instellingen (zie "Aandachtspunten 3Di model")
+#. Maak een map met alle neerslagbestanden die je in je simulaties wilt gebruiken. Deze regenbestanden moeten het 'min,mm'-formaat hebben, waarbij min de tijdstap in minuten is en mm de hoeveelheid regen die tijdens de tijdstap valt, in millimeters. Elke tijdstap wordt gescheiden door een nieuwe regel, zoals in het onderstaande voorbeeld::
 
-    0,5.0
-    30,1.5
-    60,0.0
-#. Create an output folder in which the result files will be stored.
-#. Find the ID of your 3Di model on 3Di Management
-#. On the command line, run ``run-rain-series-simulations --help`` to see which arguments you need to specify.
-#. On the command line, run ``process-rain-series-results --help`` to see which arguments you need to specify.
+    0,5,0
+    30,1,5
+    60,0,0
+#. Maak een uitvoermap waarin de resultaatbestanden worden opgeslagen.
+#. Zoek de ID van uw 3Di-model op 3Di Management
+#. Voer op de opdrachtregel ``run-rain-series-simulation --help`` uit om te zien welke argumenten u moet opgeven.
+#. Voer op de opdrachtregel ``process-rain-series-results --help`` uit om te zien welke argumenten u moet opgeven.
 
-Example
+Voorbeeld
 -------
 
-  $ run-rain-series-simulations <3Di Model ID> <rain files dir> <results dir> -o <organisation (optional)> -h <host (optional)>
+De voorbeelden hieronder laten zien hoe ``threedi-urban-eia-nl`` kan worden gebruikt als command line tool.
+
+  $ run-rain-series-simulations <3Di Model ID> <pad\naar\neerslagbestandenmap> <pad\naar\resultatenmap> -o <organisatie UUID (optioneell)> -h <host (optional)>
 
   $ process-rain-series-results <created simulations json file> -h <host (optional)> -d <sets debug flag to True> -s <skips downloading result files>
 
-Example command::
+Voorbeeldcommando's::
 
   $ run-rain-series-simulations 12345 rain_files/ results/ user.name
 
@@ -106,14 +109,13 @@ Tweede fase:
 
 * De bestandsnaam geeft de start- en eindtijd van de neerslaggebeurtenis weer
 
-Created Files and Directories
------------------------------
+Aangemaakte bestanden en mappen
+-------------------------------
 
-- aggregation_netcdf, directory containing simulation aggregate result data
-- simulations, directory containing simulation log data (use --debug option)
-- threedi_urban_eia_nl_statistics.csv, batch calculation result
-- crashed_simulations.json, IDs of crashed simulations (optional)
-- created_simulations_<date>.json, information about created simulations, serves as input file for process-rain-series-results
-- gridadmin.h5, necessary for calculation of batch statistics
-- nan_rows.json, information about weirs that contain NaN data in their cumulative discharge (optional)
-
+- aggregation_netcdf, map met geaggregeerde resultaten van de simulatie
+- simulations, map met simulatieloggegevens (gebruik de optie --debug)
+- threedi_urban_eia_nl_statistics.csv, batchberekeningsresultaat
+- crashed_simulations.json, ID's van gecrashte simulaties (optioneel)
+- create_simulations_<datum>.json, informatie over uitgevoerde simulaties, dient als invoerbestand voor ``proces-rain-series-results``
+- gridadmin.h5, noodzakelijk voor berekening van batchstatistieken
+- nan_rows.json, informatie over stuwen die NaN-gegevens bevatten in hun cumulatieve afvoer (optioneel)
