@@ -5,7 +5,7 @@ Changelog of threedi-urban-eia-nl
 0.0.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Also scan for .gpkg files in zip archives when looking for schematisation database.
 
 
 0.0.2 (2024-09-10)

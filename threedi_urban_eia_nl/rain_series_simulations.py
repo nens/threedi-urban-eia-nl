@@ -58,7 +58,7 @@ def printProgressBar(iteration, total, text, length=100):
         print()
 
 
-def download_sqlite(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
+def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
     print("Downloading and validating sqlite...")
     threedimodel: ThreediModel = api.threedimodels_read(threedimodel_id)
     revision: Revision = api.schematisations_revisions_read(
@@ -66,7 +66,7 @@ def download_sqlite(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> 
         schematisation_pk=threedimodel.schematisation_id,
     )
     if revision.sqlite is None or revision.sqlite.file.state != "uploaded":
-        raise ValueError("The revision has no SQLite.")
+        raise ValueError("The revision has no uploaded SQLite or GPKG.")
 
     download = api.schematisations_revisions_sqlite_download(
         threedimodel.revision_id,
@@ -80,17 +80,17 @@ def download_sqlite(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> 
         with path.open("rb") as f:
             zf = zipfile.ZipFile(f)
             for fn in zf.namelist():
-                if fn.lower().endswith(".sqlite"):
+                if fn.lower().endswith(".sqlite") or fn.lower().endswith(".gpkg"):
                     zf.extract(fn, path=path.parent)
                     return path.parent / fn
             else:
-                raise FileNotFoundError(f"Could not find an .sqlite in zipfile {path}")
+                raise FileNotFoundError(f"Could not find a .sqlite or .gpkg in zipfile {path}")
 
     return path
 
 
-def validate_sqlite(sqlite_path: Path):
-    engine = create_engine(f"sqlite:///{sqlite_path}")
+def validate_model(model_path: Path):
+    engine = create_engine(f"sqlite:///{model_path}")
     session = Session(engine)
 
     database_schema_version = session.execute(
@@ -121,7 +121,7 @@ def validate_sqlite(sqlite_path: Path):
 
     if aggregation_methods != REQUIRED_AGGREGATION_METHODS:
         raise ValueError(
-            "SQLite does not contain correct aggregation settings for discharge. "
+            "Model does not contain correct aggregation settings for discharge. "
             f"Required aggregation settings are: {REQUIRED_AGGREGATION_METHODS}. "
             f"Current aggregation settings: {aggregation_methods}"
         )
@@ -610,8 +610,8 @@ def create_rain_series_simulations(
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
-        sqlite_path = download_sqlite(api, threedimodel_id, results_dir)
-        validate_sqlite(sqlite_path)
+        model_path = download_model(api, threedimodel_id, results_dir)
+        validate_model(model_path)
 
         # Setup simulation and in dry state to create saved states
         print("Creating 3 day DWF simulation")
