@@ -5,7 +5,7 @@ Changelog of threedi-urban-eia-nl
 0.0.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Aggregation settings sql now uses interval instead of timestep
 
 
 0.0.4 (2025-12-19)

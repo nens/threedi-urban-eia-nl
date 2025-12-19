@@ -84,7 +84,9 @@ def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> P
                     zf.extract(fn, path=path.parent)
                     return path.parent / fn
             else:
-                raise FileNotFoundError(f"Could not find a .sqlite or .gpkg in zipfile {path}")
+                raise FileNotFoundError(
+                    f"Could not find a .sqlite or .gpkg in zipfile {path}"
+                )
 
     return path
 
@@ -99,13 +101,13 @@ def validate_model(model_path: Path):
 
     if int(database_schema_version) < 222:
         query = """
-        SELECT timestep, aggregation_method
+        SELECT interval, aggregation_method
         FROM v2_aggregation_settings
         WHERE flow_variable='discharge';
         """
     else:
         query = """
-        SELECT timestep, aggregation_method
+        SELECT interval, aggregation_method
         FROM aggregation_settings
         WHERE flow_variable='discharge';
         """
