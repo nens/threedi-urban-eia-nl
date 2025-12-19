@@ -5,7 +5,7 @@ Changelog of threedi-urban-eia-nl
 0.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix title underline length in README.rst example section.
 
 
 0.0.3 (2025-12-19)

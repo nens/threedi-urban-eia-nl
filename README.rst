@@ -78,7 +78,7 @@ Doorloop de volgende stappen om ervoor te zorgen dat deze tool correct werkt:
 #. Voer op de opdrachtregel ``process-rain-series-results --help`` uit om te zien welke argumenten u moet opgeven.
 
 Voorbeeld
--------
+---------
 
 De voorbeelden hieronder laten zien hoe ``threedi-urban-eia-nl`` kan worden gebruikt als command line tool.
 
