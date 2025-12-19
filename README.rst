@@ -74,7 +74,7 @@ Doorloop de volgende stappen om ervoor te zorgen dat deze tool correct werkt:
     60,0,0
 #. Maak een uitvoermap waarin de resultaatbestanden worden opgeslagen.
 #. Zoek de ID van uw 3Di-model op 3Di Management
-#. Voer op de opdrachtregel ``run-rain-series-simulation --help`` uit om te zien welke argumenten u moet opgeven.
+#. Voer op de opdrachtregel ``run-rain-series-simulations --help`` uit om te zien welke argumenten u moet opgeven.
 #. Voer op de opdrachtregel ``process-rain-series-results --help`` uit om te zien welke argumenten u moet opgeven.
 
 Voorbeeld
