@@ -31,6 +31,9 @@ from threedi_api_client.openapi.models import (
 )
 from threedi_api_client.versions import V3BetaApi
 
+from threedi_urban_eia_nl import harderwijk
+from threedi_urban_eia_nl.complex_structure_control import simulate_with_complex_structure_control
+
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
 API_429_TIMEOUT = 60
@@ -413,13 +416,6 @@ def create_simulations_from_netcdf_rain_events(
             if netcdf.file.state == "processed":
                 started_simulations.append(simulation)
                 rain_event_simulations.remove(simulation)
-                api_call(
-                    api.simulations_actions_create,
-                    *(
-                        simulation.id,
-                        Action(name="queue"),
-                    ),
-                )
             elif netcdf.file.state == "error":
                 print(
                     f"Warning: error processing netcdf for simulation {simulation.id}.",
@@ -651,6 +647,17 @@ def create_rain_series_simulations(
         rain_event_simulations = create_simulations_from_rain_events(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
         )
+
+        rain_event_simulations_queue = rain_event_simulations
+        while len(rain_event_simulations_queue) > 0:
+            simulate_with_complex_structure_control(
+                api_client=api,
+                simulation=simulation,
+                measure_locations=harderwijk.MEASURE_LOCATIONS,
+                structures=harderwijk.STRUCTURES,
+                measure_frequency=300,
+                structure_control_logic=harderwijk.structure_control_logic
+            )
 
         # write results to out_path
         create_result_file(
