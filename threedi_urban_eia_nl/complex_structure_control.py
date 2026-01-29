@@ -293,7 +293,7 @@ def multiple_simulate_with_complex_structure_control(
     the simulation.
 
     Assumes that all simulations use the same model.
-
+    Assumes that organisation is used for this purpose only (no other simulations are being queued)
     """
     # Set output time step to the measure frequency, because the water levels are read from the NetCDF during
     # the simulation
@@ -309,49 +309,64 @@ def multiple_simulate_with_complex_structure_control(
 
     queued_simulations = simulations
     running_simulations = []
-    session_limit = api_client.contracts_list(organisation__id==simulations[0].organisation)
-    while len(queued_simulations) > 0:
-    for simulation in simulations:
-        status = api_client.simulations_status_list(simulation_pk=simulation.id)
-        while status.name not in ["ended", "postprocessing", "finished", "crashed"]:
-
-            api_client.simulations_actions_create(
-                simulation_pk=simulation.id, data={
-                    "name": "start",
-                    "duration": measure_frequency
-                }
-            )
+    # TODO: - make a new class ManagedSimulation with
+    #     .structures
+    #     .measure_locations
+    #     .__init__(
+    #       simulation: Simulation,
+    #       structures: Dict[str, Structure],
+    #       measure_locations: Dict[str, MeasureLocation]
+    #     )
+    #  - when resuming the simulation, keep waiting for the simulation to resume before continuing to the next
+    #  - when waiting for the simulation to be paused (i.e. it has finished `measure_frequency` seconds of simulation),
+    #    only wait once for all simulations
+    session_limit = api_client.contracts_list(
+        organisation__unique_id=simulations[0].organisation
+    ).results[0].session_limit
+    for _ in range(min(session_limit, len(queued_simulations))):
+        running_simulations.append(queued_simulations.pop(0))
+    while len(running_simulations) > 0:
+        for simulation in running_simulations:
             status = api_client.simulations_status_list(simulation_pk=simulation.id)
-            while status.paused:
-                # Wait for the simulation to resume
-                time.sleep(0.1)
+            while status.name not in ["ended", "postprocessing", "finished", "crashed"]:
+                api_client.simulations_actions_create(
+                    simulation_pk=simulation.id, data={
+                        "name": "start",
+                        "duration": measure_frequency
+                    }
+                )
                 status = api_client.simulations_status_list(simulation_pk=simulation.id)
-            # TODO: dit kan ws. slimmer met een status websocket
-            status = api_client.simulations_status_list(simulation_pk=simulation.id)
-            while not (status.paused or status.name in ["ended", "postprocessing", "finished", "crashed"]):
-                time.sleep(1)
+                while status.paused:
+                    # Wait for the simulation to resume
+                    time.sleep(0.1)
+                    status = api_client.simulations_status_list(simulation_pk=simulation.id)
+                # TODO: dit kan ws. slimmer met een status websocket
                 status = api_client.simulations_status_list(simulation_pk=simulation.id)
+                while not (status.paused or status.name in ["ended", "postprocessing", "finished", "crashed"]):
+                    # Wait for the simulation to reach paused status
+                    time.sleep(1)
+                    status = api_client.simulations_status_list(simulation_pk=simulation.id)
 
-            if status.name == "initialized":
-                # read water levels
-                for name in measure_locations.keys():
-                    measure_location = measure_locations[name]
-                    try:
-                        water_level = read_water_level(
-                            api_client=api_client,
-                            simulation_id=simulation.id,
-                            start_time=int(status.time) - measure_frequency,  # only works while the simulation is paused
-                            node_id=measure_location.node_id
-                        )
-                    except ApiException:
-                        status = api_client.simulations_status_list(simulation_pk=simulation.id)
-                        if status.name in ["ended", "postprocessing", "finished", "crashed"]:
-                            return
-                        else:
-                            raise
-                    measure_location.water_levels.append(water_level)
+                if status.name == "initialized":
+                    # read water levels
+                    for name in measure_locations.keys():
+                        measure_location = measure_locations[name]
+                        try:
+                            water_level = read_water_level(
+                                api_client=api_client,
+                                simulation_id=simulation.id,
+                                start_time=int(status.time) - measure_frequency,  # only works while the simulation is paused
+                                node_id=measure_location.node_id
+                            )
+                        except ApiException:
+                            status = api_client.simulations_status_list(simulation_pk=simulation.id)
+                            if status.name in ["ended", "postprocessing", "finished", "crashed"]:
+                                return
+                            else:
+                                raise
+                        measure_location.water_levels.append(water_level)
 
-                # perform calculations to decide what needs to be done with the orifices
-                # # Note that water level is -9999 if node is dry
-                structure_control_logic(api_client, simulation, status.time, structures, measure_locations)
+                    # perform calculations to decide what needs to be done with the orifices
+                    # # Note that water level is -9999 if node is dry
+                    structure_control_logic(api_client, simulation, status.time, structures, measure_locations)
 
