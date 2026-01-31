@@ -32,7 +32,7 @@ from threedi_api_client.openapi.models import (
 from threedi_api_client.versions import V3BetaApi
 
 from threedi_urban_eia_nl import harderwijk
-from threedi_urban_eia_nl.complex_structure_control import simulate_with_complex_structure_control
+from threedi_urban_eia_nl.complex_structure_control import multiple_simulate_with_complex_structure_control
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
@@ -59,6 +59,27 @@ def printProgressBar(iteration, total, text, length=100):
     print(f"\r{text} |{bar}| {percent}% Completed", end="\r")
     if iteration == total:
         print()
+
+
+def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
+    """Set aggregation settings to those required for urban environmental impact assessment"""
+
+    # delete existing settings
+    current_settings = api.simulations_settings_aggregation_list(simulation.id, limit=99).results
+    for entry in current_settings:
+        entry_id = entry.url.split("/")[-2]
+        api.simulations_settings_aggregation_delete(id=entry_id, simulation_pk=simulation.id)
+
+    # post the new settings
+    aggregation_settings = [
+        {
+            "flow_variable": "discharge",
+            "method": method,
+            "interval": 3600,
+        } for method in REQUIRED_AGGREGATION_METHODS
+    ]
+    for aggregation_setting in aggregation_settings:
+        api.simulations_settings_aggregation_create(simulation.id, data=aggregation_setting)
 
 
 def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
@@ -459,12 +480,11 @@ def create_simulations_from_rain_events(
             warnings.append(f"Warning: {file.name} last rain intensity value is not 0")
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
-        filename_date = (
-            datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
-            .astimezone(tz=pytz.timezone("Europe/Amsterdam"))
-            .astimezone(tz=pytz.UTC)
-            .replace(tzinfo=None)
-        )
+        filename_datetime = datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
+        tz = pytz.timezone("Europe/Amsterdam")
+        localized = tz.localize(filename_datetime)
+        with_utc_time_zone = localized.astimezone(tz=pytz.UTC)
+        filename_date = with_utc_time_zone.replace(tzinfo=None)
 
         # Convert from [mm/timestep in minutes] to [m/s]
         timesteps = np.diff(timeseries[:, 0])
@@ -512,15 +532,8 @@ def create_simulations_from_rain_events(
                 simulation.id,
                 **{"data": rain_data},
             )
-
+        set_correct_aggregation_settings(api=api, simulation=simulation)
         rain_event_simulations.append(simulation)
-        api_call(
-            api.simulations_actions_create,
-            *(
-                simulation.id,
-                Action(name="queue"),
-            ),
-        )
 
     for warning in warnings:
         print(warning)
@@ -554,6 +567,13 @@ def create_result_file(
     "threedimodel_id",
     type=int,
 )
+@click.option(
+    "-sss",
+    "--saved_states_simulation_id",
+    type=int,
+    default=None,
+    help="Simulation that was run to create saved states",
+)
 @click.argument(
     "rain_files_dir",
     type=click.Path(exists=True, readable=True, path_type=Path),
@@ -583,6 +603,7 @@ def create_result_file(
 )
 def create_rain_series_simulations(
     threedimodel_id: int,
+    saved_states_simulation_id: int | None,
     rain_files_dir: Path,
     results_dir: Path,
     apikey: str,
@@ -608,31 +629,34 @@ def create_rain_series_simulations(
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
-        model_path = download_model(api, threedimodel_id, results_dir)
-        validate_model(model_path)
+        # model_path = download_model(api, threedimodel_id, results_dir)
+        # validate_model(model_path)
 
         # Setup simulation and in dry state to create saved states
-        print("Creating 3 day DWF simulation")
-        simulation_dwf: Simulation = create_simulation(
-            api,
-            threedimodel_id,
-            organisation,
-            3 * 24 * 60 * 60,
-            RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
-        )
-        saved_states = create_saved_states(api, simulation_dwf)
-        api_call(
-            api.simulations_actions_create,
-            *(
-                simulation_dwf.id,
-                Action(name="queue"),
-            ),
-        )
-        await_simulation_completion(api, simulation_dwf)
+        if saved_states_simulation_id:
+            simulation_dwf = api.simulations_read(saved_states_simulation_id)
+            saved_states = get_saved_states(api, simulation_dwf)
+            print(f"Using saved states from simulation {saved_states_simulation_id}")
+        else:
+            print("Creating 3 day DWF simulation")
+            simulation_dwf: Simulation = create_simulation(
+                api,
+                threedimodel_id,
+                organisation,
+                3 * 24 * 60 * 60,
+                RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
+            set_correct_aggregation_settings(api=api, simulation=simulation_dwf)
+            saved_states = create_saved_states(api, simulation_dwf)
+            api_call(
+                api.simulations_actions_create,
+                *(
+                    simulation_dwf.id,
+                    Action(name="queue"),
+                ),
+            )
+            await_simulation_completion(api, simulation_dwf)
 
-        # Convenience functions in case DWF simulation is already available
-        # simulation_dwf = api.simulations_read(22487)
-        # saved_states = get_saved_states(api, simulation_dwf)
 
         # create netcdf files from rain timeseries and create simulations
         # netcdfs = convert_to_netcdf(rain_files_dir)
@@ -648,16 +672,14 @@ def create_rain_series_simulations(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
         )
 
-        rain_event_simulations_queue = rain_event_simulations
-        while len(rain_event_simulations_queue) > 0:
-            simulate_with_complex_structure_control(
-                api_client=api,
-                simulation=simulation,
-                measure_locations=harderwijk.MEASURE_LOCATIONS,
-                structures=harderwijk.STRUCTURES,
-                measure_frequency=300,
-                structure_control_logic=harderwijk.structure_control_logic
-            )
+        multiple_simulate_with_complex_structure_control(
+            api_client=api,
+            simulations=rain_event_simulations,
+            measure_locations=harderwijk.MEASURE_LOCATIONS,
+            structures=harderwijk.STRUCTURES,
+            measure_frequency=300,
+            structure_control_logic=harderwijk.structure_control_logic
+        )
 
         # write results to out_path
         create_result_file(
@@ -670,4 +692,15 @@ def create_rain_series_simulations(
 
 
 if __name__ == "__main__":
-    create_rain_series_simulations()
+    # create_rain_series_simulations()
+    from api_key import PERSONAL_API_KEY
+
+    create_rain_series_simulations.callback(
+        threedimodel_id=76095,
+        saved_states_simulation_id=371329,
+        rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
+        results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+        apikey=PERSONAL_API_KEY,
+        organisation="4178c71845f14a3babc1b042e7505193",
+        host="https://api.3di.live",
+    )

@@ -8,9 +8,9 @@ from typing import Optional, Literal, List, Dict, Callable
 import numpy as np
 import urllib3
 import websockets
-from openapi_client import ApiException
+
 from threedi_api_client.files import download_file
-from threedi_api_client.openapi import Simulation
+from threedi_api_client.openapi import Simulation, ApiException
 from threedi_api_client.openapi.api.v3_api import V3Api
 from threedigrid.admin.gridadmin import GridH5Admin
 
@@ -137,12 +137,181 @@ class Structure:
         )
 
 
+@dataclass
+class SimulationManager:
+    """Object that manages a simulation client-side to implement complex structure control"""
+    parent: 'QueueManager'
+    api_client: V3Api
+    simulation: Simulation
+    structures: Dict[str, Structure]
+    measure_locations: Dict[str, MeasureLocation]
+    measure_frequency: int
+    structure_control_logic: Callable[
+        [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
+        None
+    ]
+
+    def resume(self):
+        """Starts or resumes the simulation. Informs the queue manager if simulation is finished"""
+        status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+        if status.name in ["finished", "crashed"]:
+            self.parent.finish(self.simulation.id)
+        elif status.name == "initialized":
+            if status.paused:  # if simulation is initialized and not paused, it is just running
+                self.api_client.simulations_actions_create(
+                    simulation_pk=self.simulation.id,
+                    data={
+                        "name": "start",
+                        "duration": self.measure_frequency
+                    }
+                )
+                status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+                while status.paused:
+                    # Wait for the simulation to resume
+                    time.sleep(0.1)
+                    status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+        elif status.name in ["created"]:
+            try:
+                self.api_client.simulations_actions_create(
+                    simulation_pk=self.simulation.id, data={
+                        "name": "start",
+                        "duration": self.measure_frequency
+                    }
+                )
+            except ApiException:
+                # assuming this is because there are no sessions available
+                # we will try again next round
+                pass
+        elif status.name in ["starting", "queued", "ended", "postprocessing"]:
+            pass  # just wait for the status to become one of the others that we can deal with
+        else:
+            raise RuntimeError(f"Simulation {self.simulation.id} has unknown status '{status.name}'")
+
+    def read_water_levels(self, current_simulation_time: int):
+        for name in self.measure_locations.keys():
+            measure_location = self.measure_locations[name]
+            try:
+                water_level = read_water_level(
+                    api_client=self.api_client,
+                    simulation_id=self.simulation.id,
+                    start_time=current_simulation_time - self.measure_frequency,  # only works while the simulation is paused
+                    node_id=measure_location.node_id
+                )
+            except ApiException:
+                status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+                if status.name in ["ended", "postprocessing", "finished", "crashed"]:
+                    return
+                else:
+                    raise
+            measure_location.water_levels.append(water_level)
+
+    def apply_structure_control_logic(self):
+        status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+        if status.name in ["finished", "crashed"]:
+            self.parent.finish(self.simulation.id)
+        elif status.name == "initialized":
+            if status.paused:
+                self.read_water_levels(int(status.time))
+                self.structure_control_logic(
+                    self.api_client,
+                    self.simulation,
+                    status.time,
+                    self.structures,
+                    self.measure_locations
+                )
+            else:
+                pass  # just wait until the next round
+        elif status.name in ["created", "starting", "queued", "ended", "postprocessing"]:
+            pass  # just wait for the status to become one of the others that we can deal with
+
+
+class QueueManager:
+    """Manages a queue of simulations that have the same set of structures and measure locations"""
+    def __init__(
+            self,
+            api_client: V3Api,
+            structures: Dict[str, Structure],
+            measure_locations: Dict[str, MeasureLocation],
+            measure_frequency: int,
+            structure_control_logic: Callable[
+                [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
+                None
+            ]
+    ):
+        self.api_client = api_client
+        self.queued_simulations = []
+        self._running_simulations = {}
+        self._finished_simulations = []
+        self.structures = structures
+        self.measure_locations = measure_locations
+        self.measure_frequency = measure_frequency
+        self.structure_control_logic = structure_control_logic
+
+    @property
+    def running_simulations(self):
+        return self._running_simulations
+
+    def fill_running(self):
+        """Add simulations to running simulations until nr of running simulations equals organisations' session limit"""
+        if len(self.running_simulations) == 0:
+            self.run_next()
+        a_running_simulation = next(iter(self._running_simulations.values()))
+        organisation = a_running_simulation.simulation.organisation
+        session_limit = self.api_client.contracts_list(
+            organisation__unique_id=organisation
+        ).results[0].session_limit
+        for _ in range(min(session_limit - len(self._running_simulations), len(self.queued_simulations))):
+            self.run_next()
+
+
+    def run_next(self) -> bool:
+        """
+        Pop the first simulation from the queue, create a simulation manager for it and add that to running simulations.
+        Returns False if no simulation was available in the queue
+        """
+        if len(self.queued_simulations) > 0:
+            simulation = self.queued_simulations.pop(0)
+            simulation_manager = SimulationManager(
+                parent=self,
+                api_client=self.api_client,
+                simulation=simulation,
+                structures=self.structures,
+                measure_locations=self.measure_locations,
+                measure_frequency=self.measure_frequency,
+                structure_control_logic=self.structure_control_logic,
+            )
+            self._running_simulations[simulation.id] = simulation_manager
+            print(f"Added simulation {simulation.id} to running simulations")
+            return True
+        else:
+            return False
+
+    def finish(self, simulation_id: int):
+        """
+        Moves simulation with given simulation id from running simulations to finished simulations
+        Calls run_next after that
+        Raises IndexError if given simulation was not in running simulations
+        """
+        simulation = self._running_simulations.pop(simulation_id)
+        self._finished_simulations[simulation.id] = simulation
+        self.run_next()
+
+    def resume_running_simulations(self):
+        for simulation_manager in self.running_simulations.values():
+            simulation_manager.resume()
+
+    def apply_structure_control_logic(self):
+        for simulation_manager in self.running_simulations.values():
+            simulation_manager.apply_structure_control_logic()
+
+
 def download_gridadmin(simulation: Simulation, api_client: V3Api) -> Path:
     download_folder = Path(tempfile.mkdtemp())
     download_url = api_client.threedimodels_gridadmin_download(simulation.threedimodel_id)
     file_path = download_folder / "gridadmin.h5"
     download_file(download_url.get_url, file_path, timeout=DOWNLOAD_TIMEOUT)
     return file_path
+
 
 async def read_websocket_data(
         api_client: V3Api,
@@ -295,78 +464,34 @@ def multiple_simulate_with_complex_structure_control(
     Assumes that all simulations use the same model.
     Assumes that organisation is used for this purpose only (no other simulations are being queued)
     """
-    # Set output time step to the measure frequency, because the water levels are read from the NetCDF during
-    # the simulation
+    # Get node ids for measure locations
     gridadmin_path = download_gridadmin(api_client=api_client, simulation=simulations[0])
     for measure_location in measure_locations.values():
         measure_location.get_node_id(gridadmin_path)
 
+    # Set output time step to the measure frequency, because the water levels are read from the NetCDF during
+    # the simulation
     for simulation in simulations:
         api_client.simulations_settings_output_settings_partial_update(
             simulation.id,
             {"hydro_output_time_step": measure_frequency}
         )
 
-    queued_simulations = simulations
-    running_simulations = []
-    # TODO: - make a new class ManagedSimulation with
-    #     .structures
-    #     .measure_locations
-    #     .__init__(
-    #       simulation: Simulation,
-    #       structures: Dict[str, Structure],
-    #       measure_locations: Dict[str, MeasureLocation]
-    #     )
-    #  - when resuming the simulation, keep waiting for the simulation to resume before continuing to the next
-    #  - when waiting for the simulation to be paused (i.e. it has finished `measure_frequency` seconds of simulation),
-    #    only wait once for all simulations
-    session_limit = api_client.contracts_list(
-        organisation__unique_id=simulations[0].organisation
-    ).results[0].session_limit
-    for _ in range(min(session_limit, len(queued_simulations))):
-        running_simulations.append(queued_simulations.pop(0))
-    while len(running_simulations) > 0:
-        for simulation in running_simulations:
-            status = api_client.simulations_status_list(simulation_pk=simulation.id)
-            while status.name not in ["ended", "postprocessing", "finished", "crashed"]:
-                api_client.simulations_actions_create(
-                    simulation_pk=simulation.id, data={
-                        "name": "start",
-                        "duration": measure_frequency
-                    }
-                )
-                status = api_client.simulations_status_list(simulation_pk=simulation.id)
-                while status.paused:
-                    # Wait for the simulation to resume
-                    time.sleep(0.1)
-                    status = api_client.simulations_status_list(simulation_pk=simulation.id)
-                # TODO: dit kan ws. slimmer met een status websocket
-                status = api_client.simulations_status_list(simulation_pk=simulation.id)
-                while not (status.paused or status.name in ["ended", "postprocessing", "finished", "crashed"]):
-                    # Wait for the simulation to reach paused status
-                    time.sleep(1)
-                    status = api_client.simulations_status_list(simulation_pk=simulation.id)
+    # Run it all
+    queue_manager = QueueManager(
+        api_client=api_client,
+        measure_frequency=measure_frequency,
+        measure_locations=measure_locations,
+        structures=structures,
+        structure_control_logic=structure_control_logic,
+    )
+    queue_manager.queued_simulations = simulations
+    queue_manager.fill_running()
 
-                if status.name == "initialized":
-                    # read water levels
-                    for name in measure_locations.keys():
-                        measure_location = measure_locations[name]
-                        try:
-                            water_level = read_water_level(
-                                api_client=api_client,
-                                simulation_id=simulation.id,
-                                start_time=int(status.time) - measure_frequency,  # only works while the simulation is paused
-                                node_id=measure_location.node_id
-                            )
-                        except ApiException:
-                            status = api_client.simulations_status_list(simulation_pk=simulation.id)
-                            if status.name in ["ended", "postprocessing", "finished", "crashed"]:
-                                return
-                            else:
-                                raise
-                        measure_location.water_levels.append(water_level)
+    while len(queue_manager.running_simulations) > 0:
+        queue_manager.resume_running_simulations()
+        time.sleep(1)
+        queue_manager.apply_structure_control_logic()
 
-                    # perform calculations to decide what needs to be done with the orifices
-                    # # Note that water level is -9999 if node is dry
-                    structure_control_logic(api_client, simulation, status.time, structures, measure_locations)
+
 

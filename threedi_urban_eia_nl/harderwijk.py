@@ -1,6 +1,7 @@
 from typing import Dict
 
-from openapi_client import Simulation
+from threedi_api_client.openapi import Simulation
+from threedi_api_client.openapi.api.v3_api import V3Api
 
 from complex_structure_control import MeasureLocation, Structure
 
