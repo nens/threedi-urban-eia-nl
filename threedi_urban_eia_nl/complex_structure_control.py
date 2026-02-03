@@ -158,6 +158,10 @@ class SimulationManager:
             self.parent.finish(self.simulation.id)
         elif status.name == "initialized":
             if status.paused:  # if simulation is initialized and not paused, it is just running
+                print(
+                    f"Resuming simulation {self.simulation.id} "
+                    f"at {status.time} seconds, {int(status.time / self.simulation.duration * 100)} % ..."
+                )
                 self.api_client.simulations_actions_create(
                     simulation_pk=self.simulation.id,
                     data={
@@ -165,7 +169,6 @@ class SimulationManager:
                         "duration": self.measure_frequency
                     }
                 )
-                status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
                 while status.paused:
                     # Wait for the simulation to resume
                     time.sleep(0.1)
@@ -181,7 +184,10 @@ class SimulationManager:
             except ApiException:
                 # assuming this is because there are no sessions available
                 # we will try again next round
-                pass
+                print(
+                    f"Simulation {self.simulation.id} cannot be started, probably there are no sessions available."
+                    "Will try again later."
+                )
         elif status.name in ["starting", "queued", "ended", "postprocessing"]:
             pass  # just wait for the status to become one of the others that we can deal with
         else:
@@ -239,16 +245,16 @@ class QueueManager:
             ]
     ):
         self.api_client = api_client
-        self.queued_simulations = []
-        self._running_simulations = {}
-        self._finished_simulations = []
+        self.queued_simulations: List[Simulation] = []
+        self._running_simulations: Dict[int, SimulationManager] = {}
+        self.finished_simulations: List[Simulation] = []
         self.structures = structures
         self.measure_locations = measure_locations
         self.measure_frequency = measure_frequency
         self.structure_control_logic = structure_control_logic
 
     @property
-    def running_simulations(self):
+    def running_simulations(self) -> Dict[int, SimulationManager]:
         return self._running_simulations
 
     def fill_running(self):
@@ -262,7 +268,6 @@ class QueueManager:
         ).results[0].session_limit
         for _ in range(min(session_limit - len(self._running_simulations), len(self.queued_simulations))):
             self.run_next()
-
 
     def run_next(self) -> bool:
         """
@@ -292,8 +297,9 @@ class QueueManager:
         Calls run_next after that
         Raises IndexError if given simulation was not in running simulations
         """
-        simulation = self._running_simulations.pop(simulation_id)
-        self._finished_simulations[simulation.id] = simulation
+        simulation_manager = self._running_simulations.pop(simulation_id)
+        self.finished_simulations.append(simulation_manager.simulation)
+        print(f"Finished simulation {simulation_manager.simulation.id}")
         self.run_next()
 
     def resume_running_simulations(self):

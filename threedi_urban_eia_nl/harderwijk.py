@@ -65,6 +65,7 @@ def structure_control_logic(
                 )
         ):
             # alle stuwputten dicht zetten
+            print("Alle stuwputten dichtzetten...")
             for structure in STRUCTURES.values():
                 structure.set_valve(
                     api_client=api_client,
@@ -73,6 +74,7 @@ def structure_control_logic(
                     offset=simulation_current_time,
                     duration=simulation.duration,  # let this action be active until a new action is activated
                 )
+            print("Alle stuwputten dichtgezet.")
     elif not any([structure.is_open for structure in STRUCTURES.values()]):  # als alle stuwputten dicht staan...
         if (
                 (
@@ -92,14 +94,16 @@ def structure_control_logic(
                 )
         ):
             # alle stuwputten open zetten
+            print("Alle stuwputten openzetten...")
             for structure in structures.values():
                 structure.set_valve(
+                    api_client=api_client,
                     simulation=simulation,
                     action="open",
                     offset=simulation_current_time,
                     duration=simulation.duration,  # let this action be active until a new action is activated
                 )
-
+            print("Alle stuwputten open gezet.")
     else:
         raise NotImplementedError(
             "Sommige stuwputten zijn open en sommige dicht, hier kan de regeling niet mee omgaan"
