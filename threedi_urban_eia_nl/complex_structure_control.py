@@ -2,6 +2,7 @@ import asyncio
 import tempfile
 import time
 from dataclasses import dataclass, field
+from functools import wraps
 from pathlib import Path
 from typing import Optional, Literal, List, Dict, Callable
 
@@ -311,6 +312,31 @@ class QueueManager:
             simulation_manager.apply_structure_control_logic()
 
 
+def retry_on_500(delays=(0.1, 1, 2, 5, 10, 20, 50)):
+    """
+    Retry decorator that retries when an ApiException with status=500 occurs.
+    Retries after the specified delays; raises after final attempt.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for i, delay in enumerate(delays):
+                try:
+                    return func(*args, **kwargs)
+                except ApiException as e:
+                    # only retry on status 500
+                    if getattr(e, "status", None) == 500:
+                        if i == len(delays) - 1:
+                            # last attempt -> re-raise
+                            raise
+                        time.sleep(delay)
+                    else:
+                        # other errors should not be retried
+                        raise
+        return wrapper
+    return decorator
+
+
 def download_gridadmin(simulation: Simulation, api_client: V3Api) -> Path:
     download_folder = Path(tempfile.mkdtemp())
     download_url = api_client.threedimodels_gridadmin_download(simulation.threedimodel_id)
@@ -341,6 +367,7 @@ async def read_websocket_data(
         raise RuntimeError("Could not connect to websocket")
 
 
+@retry_on_500
 def read_water_level(api_client: V3Api, simulation_id: int, start_time: int, node_id: int):
     """
     Sync wrapper around async read_websocket_data function

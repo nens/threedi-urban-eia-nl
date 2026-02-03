@@ -12,8 +12,8 @@ import click
 import netCDF4 as nc4
 import numpy as np
 import pytz
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
+# from sqlalchemy import create_engine, text
+# from sqlalchemy.orm import Session
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
 from threedi_api_client.openapi.exceptions import ApiException
@@ -115,42 +115,42 @@ def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> P
     return path
 
 
-def validate_model(model_path: Path):
-    engine = create_engine(f"sqlite:///{model_path}")
-    session = Session(engine)
-
-    database_schema_version = session.execute(
-        text("SELECT version_num FROM schema_version;")
-    ).scalar()
-
-    if int(database_schema_version) < 222:
-        query = """
-        SELECT interval, aggregation_method
-        FROM v2_aggregation_settings
-        WHERE flow_variable='discharge';
-        """
-    else:
-        query = """
-        SELECT interval, aggregation_method
-        FROM aggregation_settings
-        WHERE flow_variable='discharge';
-        """
-
-    rows = [row for row in session.execute(text(query))]
-    timesteps = np.array([row[0] for row in rows])
-    aggregation_methods = set([row[1] for row in rows])
-
-    if not np.all(timesteps == 3600):
-        raise ValueError(
-            "All timestep fields for discharge in aggregation settings should be 3600."
-        )
-
-    if aggregation_methods != REQUIRED_AGGREGATION_METHODS:
-        raise ValueError(
-            "Model does not contain correct aggregation settings for discharge. "
-            f"Required aggregation settings are: {REQUIRED_AGGREGATION_METHODS}. "
-            f"Current aggregation settings: {aggregation_methods}"
-        )
+# def validate_model(model_path: Path):
+#     engine = create_engine(f"sqlite:///{model_path}")
+#     session = Session(engine)
+#
+#     database_schema_version = session.execute(
+#         text("SELECT version_num FROM schema_version;")
+#     ).scalar()
+#
+#     if int(database_schema_version) < 222:
+#         query = """
+#         SELECT interval, aggregation_method
+#         FROM v2_aggregation_settings
+#         WHERE flow_variable='discharge';
+#         """
+#     else:
+#         query = """
+#         SELECT interval, aggregation_method
+#         FROM aggregation_settings
+#         WHERE flow_variable='discharge';
+#         """
+#
+#     rows = [row for row in session.execute(text(query))]
+#     timesteps = np.array([row[0] for row in rows])
+#     aggregation_methods = set([row[1] for row in rows])
+#
+#     if not np.all(timesteps == 3600):
+#         raise ValueError(
+#             "All timestep fields for discharge in aggregation settings should be 3600."
+#         )
+#
+#     if aggregation_methods != REQUIRED_AGGREGATION_METHODS:
+#         raise ValueError(
+#             "Model does not contain correct aggregation settings for discharge. "
+#             f"Required aggregation settings are: {REQUIRED_AGGREGATION_METHODS}. "
+#             f"Current aggregation settings: {aggregation_methods}"
+#         )
 
 
 def create_simulation(
