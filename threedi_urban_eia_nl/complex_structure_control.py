@@ -1,6 +1,7 @@
 import asyncio
 import tempfile
 import time
+from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import wraps
 from pathlib import Path
@@ -163,14 +164,22 @@ class SimulationManager:
                     f"Resuming simulation {self.simulation.id} "
                     f"at {status.time} seconds, {int(status.time / self.simulation.duration * 100)} % ..."
                 )
-                self.api_client.simulations_actions_create(
-                    simulation_pk=self.simulation.id,
-                    data={
-                        "name": "start",
-                        "duration": self.measure_frequency
-                    }
-                )
-                while status.paused:
+                time_before_resuming = status.time
+                try:
+                    self.api_client.simulations_actions_create(
+                        simulation_pk=self.simulation.id,
+                        data={
+                            "name": "start",
+                            "duration": self.measure_frequency
+                        }
+                    )
+                except ApiException as e:
+                    if e.status == 400:
+                        print("Something fishy is going on, let's wait a bit and try again. Exception:")
+                        print(repr(e))
+                    else:
+                        raise e
+                while status.name == "initialized" and status.paused and status.time == time_before_resuming:
                     # Wait for the simulation to resume
                     time.sleep(0.1)
                     status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
@@ -281,8 +290,8 @@ class QueueManager:
                 parent=self,
                 api_client=self.api_client,
                 simulation=simulation,
-                structures=self.structures,
-                measure_locations=self.measure_locations,
+                structures=deepcopy(self.structures),
+                measure_locations=deepcopy(self.measure_locations),
                 measure_frequency=self.measure_frequency,
                 structure_control_logic=self.structure_control_logic,
             )
@@ -304,15 +313,19 @@ class QueueManager:
         self.run_next()
 
     def resume_running_simulations(self):
-        for simulation_manager in self.running_simulations.values():
+        # use list() to materialize the current values so the loop won’t break if the dict is modified inside the loop
+        # simulations started during this iteration are processed next time
+        for simulation_manager in list(self.running_simulations.values()):
             simulation_manager.resume()
 
     def apply_structure_control_logic(self):
-        for simulation_manager in self.running_simulations.values():
+        # use list() to materialize the current values so the loop won’t break if the dict is modified inside the loop
+        # simulations started during this iteration are processed next time
+        for simulation_manager in list(self.running_simulations.values()):
             simulation_manager.apply_structure_control_logic()
 
 
-def retry_on_500(delays=(0.1, 1, 2, 5, 10, 20, 50)):
+def retry_on_500(delays=(0.1, 1, 2, 5, 10, 20, 50, 60)):
     """
     Retry decorator that retries when an ApiException with status=500 occurs.
     Retries after the specified delays; raises after final attempt.
@@ -329,6 +342,7 @@ def retry_on_500(delays=(0.1, 1, 2, 5, 10, 20, 50)):
                         if i == len(delays) - 1:
                             # last attempt -> re-raise
                             raise
+                        print(f"ApiException (500) encountered. Trying again in {delay} seconds")
                         time.sleep(delay)
                     else:
                         # other errors should not be retried
@@ -367,7 +381,7 @@ async def read_websocket_data(
         raise RuntimeError("Could not connect to websocket")
 
 
-@retry_on_500
+@retry_on_500()
 def read_water_level(api_client: V3Api, simulation_id: int, start_time: int, node_id: int):
     """
     Sync wrapper around async read_websocket_data function
@@ -525,6 +539,5 @@ def multiple_simulate_with_complex_structure_control(
         queue_manager.resume_running_simulations()
         time.sleep(1)
         queue_manager.apply_structure_control_logic()
-
-
-
+        for i in range(len(queue_manager.finished_simulations)):
+            yield queue_manager.finished_simulations.pop(i)

@@ -31,8 +31,8 @@ from threedi_api_client.openapi.models import (
 )
 from threedi_api_client.versions import V3BetaApi
 
-from threedi_urban_eia_nl import harderwijk
-from threedi_urban_eia_nl.complex_structure_control import multiple_simulate_with_complex_structure_control
+import harderwijk
+from complex_structure_control import multiple_simulate_with_complex_structure_control
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
@@ -464,7 +464,7 @@ def create_simulations_from_rain_events(
     files = [f for f in rain_files_dir.iterdir() if f.is_file()]
     for i, file in enumerate(files):
         printProgressBar(i + 1, len(files), "Creating rain event simulations")
-        # retrievie rain timeseries data
+        # retrieve rain timeseries data
         with open(file, "r") as f:
             timeseries = np.array(
                 [
@@ -562,6 +562,54 @@ def create_result_file(
         print(f"Writing output to {results_file}")
 
 
+def append_or_create_result_file(
+    threedimodel_id: int,
+    simulation_dwf: Simulation,
+    rain_event_simulation: Simulation,
+    saved_states: List[SavedStateOverview],
+    results_file: Path | str,
+    overwrite: bool = False,
+) -> None:
+    """
+    Add a single rain-event simulation to the JSON results file.
+    If the file does not exist, it will be created with all fields.
+    If overwrite=True, the entire file is recreated.
+    """
+
+    results_file = Path(results_file)
+
+    # ---- CASE 1: Overwrite the file completely ----
+    if overwrite or not results_file.exists():
+        data = {
+            "threedimodel_id": threedimodel_id,
+            "simulation_dwf": simulation_dwf.to_dict(),
+            "rain_event_simulations": [rain_event_simulation.to_dict()],
+            "saved_states": [ss.to_dict() for ss in saved_states],
+        }
+
+        results_file.parent.mkdir(parents=True, exist_ok=True)
+        with results_file.open("w") as f:
+            json.dump(data, f, indent=4, default=str)
+
+        print(f"[INFO] Created/overwritten results file at {results_file}")
+        return
+
+    # ---- CASE 2: File exists → append to existing structure ----
+    with results_file.open("r") as f:
+        existing_data = json.load(f)
+
+    # Append new simulation
+    if "rain_event_simulations" not in existing_data:
+        existing_data["rain_event_simulations"] = []
+    existing_data["rain_event_simulations"].append(rain_event_simulation.to_dict())
+
+    # Save updated file
+    with results_file.open("w") as f:
+        json.dump(existing_data, f, indent=4, default=str)
+
+    print(f"[INFO] Added 1 simulation to existing file: {results_file}")
+
+
 @click.command()
 @click.argument(
     "threedimodel_id",
@@ -581,6 +629,14 @@ def create_result_file(
 @click.argument(
     "results_dir",
     type=click.Path(exists=True, writable=True, path_type=Path),
+)
+@click.option(
+    "-j",
+    "--results_json",
+    type=str,
+    default=None,
+    help="Name of the json file (in results_dir) to write results to. "
+         "If exists, will be used to continue an aborted/failed rain series",
 )
 @click.option(
     "-o",
@@ -606,6 +662,7 @@ def create_rain_series_simulations(
     saved_states_simulation_id: int | None,
     rain_files_dir: Path,
     results_dir: Path,
+    results_json: str,
     apikey: str,
     organisation: str,
     host: str,
@@ -668,27 +725,36 @@ def create_rain_series_simulations(
         #     organisation,
         # )
 
+        # TODO: only create rain event simulations for rain files that are not yet in finished simulations
+        # simulations names format:
+        # f"rain series calculation {file.name.split('.')[0]}"
         rain_event_simulations = create_simulations_from_rain_events(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
         )
 
-        multiple_simulate_with_complex_structure_control(
+
+        if results_json:
+            results_file = (Path(results_dir) / results_json).with_suffix(".json")
+        else:
+            results_file = Path(
+                results_dir, f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
+            )
+        for finished_simulation in multiple_simulate_with_complex_structure_control(
             api_client=api,
             simulations=rain_event_simulations,
             measure_locations=harderwijk.MEASURE_LOCATIONS,
             structures=harderwijk.STRUCTURES,
             measure_frequency=300,
             structure_control_logic=harderwijk.structure_control_logic
-        )
-
-        # write results to out_path
-        create_result_file(
-            threedimodel_id,
-            simulation_dwf,
-            rain_event_simulations,
-            saved_states,
-            results_dir,
-        )
+        ):
+            append_or_create_result_file(
+                threedimodel_id=threedimodel_id,
+                simulation_dwf=simulation_dwf,
+                rain_event_simulation=finished_simulation,
+                saved_states=saved_states,
+                results_file=results_file,
+                overwrite=False,
+            )
 
 
 if __name__ == "__main__":
@@ -698,8 +764,11 @@ if __name__ == "__main__":
     create_rain_series_simulations.callback(
         threedimodel_id=76095,
         saved_states_simulation_id=371329,
-        rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
-        results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+        # rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
+        rain_files_dir=Path(r"buien"),
+        # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+        results_dir=Path(r"complexe_sturing\output_rev7"),
+        results_json="poging_20260206_1006",
         apikey=PERSONAL_API_KEY,
         organisation="4178c71845f14a3babc1b042e7505193",
         host="https://api.3di.live",
