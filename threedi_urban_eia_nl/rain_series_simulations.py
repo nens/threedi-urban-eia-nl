@@ -680,6 +680,9 @@ def create_rain_series_simulations(
         - start individual simulations which take a rain event as input
         - the filename contains information about the start date and time of the event
     """
+    if not results_dir.exists():
+        raise FileNotFoundError("Results dir does not exist")
+
     config = {
         "THREEDI_API_HOST": host,
         "THREEDI_API_PERSONAL_API_TOKEN": apikey,
@@ -732,7 +735,6 @@ def create_rain_series_simulations(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
         )
 
-
         if results_json:
             results_file = (Path(results_dir) / results_json).with_suffix(".json")
         else:
@@ -765,9 +767,9 @@ if __name__ == "__main__":
         threedimodel_id=76095,
         saved_states_simulation_id=371329,
         # rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
-        rain_files_dir=Path(r"buien"),
+        rain_files_dir=Path(r"testbuien"),
         # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
-        results_dir=Path(r"complexe_sturing\output_rev7"),
+        results_dir=Path("complexe_sturing/output_rev7"),
         results_json="poging_20260206_1006",
         apikey=PERSONAL_API_KEY,
         organisation="4178c71845f14a3babc1b042e7505193",
