@@ -56,6 +56,27 @@ def printProgressBar(iteration, total, text, length=100):
         print()
 
 
+def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
+    """Set aggregation settings to those required for urban environmental impact assessment"""
+
+    # delete existing settings
+    current_settings = api.simulations_settings_aggregation_list(simulation.id, limit=99).results
+    for entry in current_settings:
+        entry_id = entry.url.split("/")[-2]
+        api.simulations_settings_aggregation_delete(id=entry_id, simulation_pk=simulation.id)
+
+    # post the new settings
+    aggregation_settings = [
+        {
+            "flow_variable": "discharge",
+            "method": method,
+            "interval": 3600,
+        } for method in REQUIRED_AGGREGATION_METHODS
+    ]
+    for aggregation_setting in aggregation_settings:
+        api.simulations_settings_aggregation_create(simulation.id, data=aggregation_setting)
+
+
 def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
     print("Downloading and validating sqlite...")
     threedimodel: ThreediModel = api.threedimodels_read(threedimodel_id)
