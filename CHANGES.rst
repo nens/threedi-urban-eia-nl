@@ -2,7 +2,7 @@ Changelog of threedi-urban-eia-nl
 ===================================================
 
 
-0.0.7 (unreleased)
+0.0.7 (2026-02-17)
 ------------------
 
 - Tiny change in a comment to re-attempt release after failed attempt to release 0.0.6
