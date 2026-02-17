@@ -544,8 +544,6 @@ def create_rain_series_simulations(
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
-        model_path = download_model(api, threedimodel_id, results_dir)
-        validate_model(model_path)
 
         # Setup simulation and in dry state to create saved states
         print("Creating 3 day DWF simulation")
