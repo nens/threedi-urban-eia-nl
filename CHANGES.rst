@@ -8,6 +8,8 @@ Changelog of threedi-urban-eia-nl
 - Set aggregation settings instead of validating schematisation
 - Improve method for parsing datetime from filename
 - Add option to use existing saved states simulation and skip creating a new one
+- More flexible rain file naming requirements + documentation
+
 
 0.0.5 (2025-12-19)
 ------------------
