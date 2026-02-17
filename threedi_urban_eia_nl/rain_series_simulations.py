@@ -499,6 +499,13 @@ def create_result_file(
     "threedimodel_id",
     type=int,
 )
+@click.option(
+    "-sss",
+    "--saved_states_simulation_id",
+    type=int,
+    default=None,
+    help="Simulation that was run to create saved states",
+)
 @click.argument(
     "rain_files_dir",
     type=click.Path(exists=True, readable=True, path_type=Path),
@@ -528,6 +535,7 @@ def create_result_file(
 )
 def create_rain_series_simulations(
     threedimodel_id: int,
+    saved_states_simulation_id: int | None,
     rain_files_dir: Path,
     results_dir: Path,
     apikey: str,
@@ -555,23 +563,30 @@ def create_rain_series_simulations(
         api: V3BetaApi
 
         # Setup simulation and in dry state to create saved states
-        print("Creating 3 day DWF simulation")
-        simulation_dwf: Simulation = create_simulation(
-            api,
-            threedimodel_id,
-            organisation,
-            3 * 24 * 60 * 60,
-            RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
-        )
-        saved_states = create_saved_states(api, simulation_dwf)
-        api_call(
-            api.simulations_actions_create,
-            *(
-                simulation_dwf.id,
-                Action(name="queue"),
-            ),
-        )
-        await_simulation_completion(api, simulation_dwf)
+        # Or use collect saved states from existing saved states simulation
+        if saved_states_simulation_id:
+            simulation_dwf = api.simulations_read(saved_states_simulation_id)
+            saved_states = get_saved_states(api, simulation_dwf)
+            print(f"Using saved states from simulation {saved_states_simulation_id}")
+        else:
+            print("Creating 3 day DWF simulation")
+            simulation_dwf: Simulation = create_simulation(
+                api,
+                threedimodel_id,
+                organisation,
+                3 * 24 * 60 * 60,
+                RAIN_EVENTS_START_DATE.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
+            set_correct_aggregation_settings(api=api, simulation=simulation_dwf)
+            saved_states = create_saved_states(api, simulation_dwf)
+            api_call(
+                api.simulations_actions_create,
+                *(
+                    simulation_dwf.id,
+                    Action(name="queue"),
+                ),
+            )
+            await_simulation_completion(api, simulation_dwf)
 
         rain_event_simulations = create_simulations_from_rain_events(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
