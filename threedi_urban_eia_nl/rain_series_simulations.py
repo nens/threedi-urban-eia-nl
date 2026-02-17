@@ -448,6 +448,7 @@ def create_simulations_from_rain_events(
                 **{"data": rain_data},
             )
 
+        set_correct_aggregation_settings(api=api, simulation=simulation)
         rain_event_simulations.append(simulation)
         api_call(
             api.simulations_actions_create,
