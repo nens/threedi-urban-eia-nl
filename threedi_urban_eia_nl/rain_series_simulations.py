@@ -276,53 +276,6 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
             }
         )
 
-        # # Create netcdf
-        # netcdf = h5py.File(
-        #     path,
-        #     mode="w",
-        # )
-
-        # # Global attributes
-        # netcdf.attrs["title"] = bytes(filename.name, encoding="utf-8")
-        # netcdf.attrs["institution"] = b"Nelen & Schuurmans"
-        # netcdf.attrs["SIMULATION_OFFSET"] = 0
-        # netcdf.attrs["SIMULATION_START_TIMESTEP"] = 0
-
-        # # Datasets
-
-        # netcdf.create_dataset(
-        #     "SIMULATION_START_TIMESTEP",
-        #     data=np.array([0]),
-        #     dtype=np.int32,
-        # )
-        # # one = netcdf.create_dataset(
-        # #     "one",
-        # #     np.array([0.0], dtype=np.float64),
-        # #     dtype=np.float64
-        # # )
-        # time = netcdf.create_dataset("time", data=time, dtype=np.float64)
-        # values = netcdf.create_dataset(
-        #     "values", data=values_converted, dtype=np.float64
-        # )
-
-        # # Dataset attributes
-        # # one.attrs["_Netcdf4Dimid"] = 1
-        # time.attrs["_Netcdf4Dimid"] = 0
-        # time.attrs["axis"] = b"T"
-        # time.attrs["calendar"] = b"standard"
-        # time.attrs["long_name"] = b"Time"
-        # time.attrs["standard_name"] = b"time"
-        # time.attrs["units"] = b"seconds since 1955-01-01 00:00:00.0 +0000'"
-        # values.attrs["_FillValue"] = np.array([-9999], dtype=np.int32)
-        # values.attrs["units"] = b"mm/h"
-
-        # # Set time as coordinate for values
-        # # one.make_scale("one")
-        # time.make_scale("time")
-        # values.dims[0].attach_scale(time)
-        # # values.dims[0].attach_scale(one)
-        # netcdf.close()
-
         f = nc4.Dataset(path, "w")
         f.CDI = "Climate Data Interface version ?? (httpf.//mpimet.mpg.de/cdi)"
         f.Conventions = "CF-1.5"
@@ -330,9 +283,6 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
         f.GDAL = "GDAL 2.2.3, released 2017/11/20"
         f.NCO = "4.7.2"
         f.CDO = "Climate Data Operators version 1.9.3 (http://mpimet.mpg.de/cdo)"
-        # f.OFFSET = 0
-        # f.SIMULATION_OFFSET = 0
-        # f.SIMULATION_START_TIMESTEP = 0
 
         f.createDimension("time", None)  # infinite size
         f.createDimension("one", 1)
@@ -633,20 +583,6 @@ def create_rain_series_simulations(
             ),
         )
         await_simulation_completion(api, simulation_dwf)
-
-        # Convenience functions in case DWF simulation is already available
-        # simulation_dwf = api.simulations_read(22487)
-        # saved_states = get_saved_states(api, simulation_dwf)
-
-        # create netcdf files from rain timeseries and create simulations
-        # netcdfs = convert_to_netcdf(rain_files_dir)
-        # rain_event_simulations = create_simulations_from_netcdf_rain_events(
-        #     api,
-        #     saved_states,
-        #     netcdfs,
-        #     threedimodel_id,
-        #     organisation,
-        # )
 
         rain_event_simulations = create_simulations_from_rain_events(
             api, saved_states, threedimodel_id, organisation, rain_files_dir
