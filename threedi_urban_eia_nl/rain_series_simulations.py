@@ -57,7 +57,10 @@ def printProgressBar(iteration, total, text, length=100):
 
 
 def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
-    """Set aggregation settings to those required for urban environmental impact assessment"""
+    """
+    Set aggregation settings to those required for
+    urban environmental impact assessment
+    """
 
     # delete existing settings
     current_settings = api.simulations_settings_aggregation_list(
