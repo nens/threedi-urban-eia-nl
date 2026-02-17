@@ -555,6 +555,9 @@ def create_rain_series_simulations(
         - start individual simulations which take a rain event as input
         - the filename contains information about the start date and time of the event
     """
+    if not results_dir.exists():
+        raise FileNotFoundError("Results dir does not exist")
+    
     config = {
         "THREEDI_API_HOST": host,
         "THREEDI_API_PERSONAL_API_TOKEN": apikey,
