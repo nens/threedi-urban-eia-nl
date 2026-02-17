@@ -404,12 +404,11 @@ def create_simulations_from_rain_events(
             warnings.append(f"Warning: {file.name} last rain intensity value is not 0")
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
-        filename_date = (
-            datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
-            .astimezone(tz=pytz.timezone("Europe/Amsterdam"))
-            .astimezone(tz=pytz.UTC)
-            .replace(tzinfo=None)
-        )
+        filename_datetime = datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
+        tz = pytz.timezone("Europe/Amsterdam")
+        localized = tz.localize(filename_datetime)
+        with_utc_time_zone = localized.astimezone(tz=pytz.UTC)
+        filename_date = with_utc_time_zone.replace(tzinfo=None)
 
         # Convert from [mm/timestep in minutes] to [m/s]
         timesteps = np.diff(timeseries[:, 0])

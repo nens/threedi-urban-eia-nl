@@ -6,6 +6,7 @@ Changelog of threedi-urban-eia-nl
 ------------------
 
 - Set aggregation settings instead of validating schematisation
+- Improve method for parsing datetime from filename
 
 
 0.0.5 (2025-12-19)
