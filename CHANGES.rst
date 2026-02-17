@@ -2,7 +2,7 @@ Changelog of threedi-urban-eia-nl
 ===================================================
 
 
-0.0.6 (unreleased)
+0.0.6 (2026-02-17)
 ------------------
 
 - Set aggregation settings instead of validating schematisation
