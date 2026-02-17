@@ -12,8 +12,6 @@ import click
 import netCDF4 as nc4
 import numpy as np
 import pytz
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
 from threedi_api_client.openapi.exceptions import ApiException
