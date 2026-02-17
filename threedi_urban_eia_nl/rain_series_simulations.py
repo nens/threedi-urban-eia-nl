@@ -558,6 +558,9 @@ def create_rain_series_simulations(
     if not results_dir.exists():
         raise FileNotFoundError("Results dir does not exist")
 
+    if not rain_files_dir.exists():
+        raise FileNotFoundError("Rain files dir does not exist")
+
     config = {
         "THREEDI_API_HOST": host,
         "THREEDI_API_PERSONAL_API_TOKEN": apikey,
