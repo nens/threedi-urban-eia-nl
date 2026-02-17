@@ -79,7 +79,9 @@ def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
         for method in REQUIRED_AGGREGATION_METHODS
     ]
     for aggregation_setting in aggregation_settings:
-        api.simulations_settings_aggregation_create(simulation.id, data=aggregation_setting)
+        api.simulations_settings_aggregation_create(
+            simulation.id, data=aggregation_setting
+        )
 
 
 def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
