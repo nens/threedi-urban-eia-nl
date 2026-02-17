@@ -56,7 +56,7 @@ def api_call(call, *args, **kwargs):
 def printProgressBar(iteration, total, text, length=100):
     percent = int(100 * (iteration / total))
     bar = "#" * percent + "-" * (length - percent)
-    print(f"\r{text} |{bar}| {percent}% Completed", end="\r")
+    print(f"/r{text} |{bar}| {percent}% Completed", end="\r")
     if iteration == total:
         print()
 
@@ -453,6 +453,7 @@ def create_simulations_from_rain_events(
     threedimodel_id: int,
     organisation_id: str,
     rain_files_dir: Path,
+    skip_files: List[str]
 ) -> List[Simulation]:
     """
     Read start time from rain files filename and create simulations with the
@@ -461,7 +462,7 @@ def create_simulations_from_rain_events(
     """
     rain_event_simulations = []
     warnings = []
-    files = [f for f in rain_files_dir.iterdir() if f.is_file()]
+    files = [f for f in rain_files_dir.iterdir() if f.is_file() and f.name not in skip_files]
     for i, file in enumerate(files):
         printProgressBar(i + 1, len(files), "Creating rain event simulations")
         # retrieve rain timeseries data
@@ -610,6 +611,28 @@ def append_or_create_result_file(
     print(f"[INFO] Added 1 simulation to existing file: {results_file}")
 
 
+def get_rain_event_simulation_names(path: Path | str, remove_prefix: str):
+    """
+    Return a list of cleaned simulation names from the JSON file.
+    Removes the `remove_prefix` from each name.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    sims = data.get("rain_event_simulations", [])
+
+    cleaned = []
+
+    for sim in sims:
+        name = sim.get("name", "")
+        # remove prefix only if it appears
+        if name.lower().startswith(remove_prefix):
+            name = name[len(remove_prefix):]
+        cleaned.append(name)
+
+    return cleaned
+
+
 @click.command()
 @click.argument(
     "threedimodel_id",
@@ -728,11 +751,19 @@ def create_rain_series_simulations(
         #     organisation,
         # )
 
-        # TODO: only create rain event simulations for rain files that are not yet in finished simulations
-        # simulations names format:
-        # f"rain series calculation {file.name.split('.')[0]}"
+        finished_simulations = []
+        if results_json:
+            results_json_full_path = (results_dir / results_json).with_suffix(".json")
+            print(f"Found existing results JSON {results_json_full_path}")
+            if results_json_full_path.exists():
+                finished_simulations = get_rain_event_simulation_names(
+                    path=results_json_full_path,
+                    remove_prefix="rain series calculation "
+                )
+            print(f"Results JSON contains {len(finished_simulations)} simulations, resuming from there")
+
         rain_event_simulations = create_simulations_from_rain_events(
-            api, saved_states, threedimodel_id, organisation, rain_files_dir
+            api, saved_states, threedimodel_id, organisation, rain_files_dir, skip_files=finished_simulations
         )
 
         if results_json:
@@ -761,17 +792,39 @@ def create_rain_series_simulations(
 
 if __name__ == "__main__":
     # create_rain_series_simulations()
-    from api_key import PERSONAL_API_KEY
 
-    create_rain_series_simulations.callback(
-        threedimodel_id=76095,
-        saved_states_simulation_id=371329,
-        # rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
-        rain_files_dir=Path(r"testbuien"),
-        # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
-        results_dir=Path("complexe_sturing/output_rev7"),
-        results_json="poging_20260206_1006",
-        apikey=PERSONAL_API_KEY,
-        organisation="4178c71845f14a3babc1b042e7505193",
-        host="https://api.3di.live",
-    )
+    from api_key import PERSONAL_API_KEY
+    #
+    # create_rain_series_simulations.callback(
+    #     threedimodel_id=76095,
+    #     saved_states_simulation_id=371329,
+    #     # rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
+    #     rain_files_dir=Path(r"buien"),
+    #     # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+    #     results_dir=Path("complexe_sturing/output_rev7"),
+    #     results_json="poging_20260206_1006",
+    #     apikey=PERSONAL_API_KEY,
+    #     organisation="4178c71845f14a3babc1b042e7505193",
+    #     host="https://api.3di.live",
+    # )
+
+    f = get_rain_event_simulation_names(
+                        path=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7") / "poging_20260206_1006.json",
+                        remove_prefix="rain series calculation "
+                    )
+    config = {
+        "THREEDI_API_HOST": "https://api.3di.live",
+        "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
+    }
+    with ThreediApi(config=config, version="v3-beta") as api:
+        statuses = []
+        for simulation_name in f:
+            simulation = api.simulations_list(name=f"rain series calculation {simulation_name}").results[0]
+            status = api.simulations_status_list(simulation.id)
+            statuses.append(status.name)
+
+    print(statuses)
+    finished = [s for s in statuses if s == 'finished']
+    print(f"finished: {len(finished)}")
+    print(f"total: {len(statuses)}")
+    print(f"original total: {len(f)}")

@@ -179,9 +179,17 @@ class SimulationManager:
                         print(repr(e))
                     else:
                         raise e
-                while status.name == "initialized" and status.paused and status.time == time_before_resuming:
+                total_waited = 0
+                while (
+                    total_waited < 60 and
+                    status.name == "initialized" and
+                    status.paused and
+                    status.time == time_before_resuming
+                ):
                     # Wait for the simulation to resume
-                    time.sleep(0.1)
+                    sleep_time = 0.1
+                    time.sleep(sleep_time)
+                    total_waited += sleep_time
                     status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
         elif status.name in ["created"]:
             try:
@@ -222,7 +230,17 @@ class SimulationManager:
             measure_location.water_levels.append(water_level)
 
     def apply_structure_control_logic(self):
-        status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+        wait_times = [1, 2, 5, 10, 20, 60, -9999]  # last wait time will be ignored
+        for wait in wait_times:
+            try:
+                status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
+            except ApiException as e:
+                if e.status == 502 and wait != wait_times[-1]:  # 502 = Bad gateway
+                    time.sleep(wait)
+                    continue
+                else:
+                    raise e
+
         if status.name in ["finished", "crashed"]:
             self.parent.finish(self.simulation.id)
         elif status.name == "initialized":
@@ -539,5 +557,5 @@ def multiple_simulate_with_complex_structure_control(
         queue_manager.resume_running_simulations()
         time.sleep(1)
         queue_manager.apply_structure_control_logic()
-        for i in range(len(queue_manager.finished_simulations)):
-            yield queue_manager.finished_simulations.pop(i)
+        while queue_manager.finished_simulations:
+            yield queue_manager.finished_simulations.pop()
