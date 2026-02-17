@@ -210,7 +210,7 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
     result = []
     filenames = [f for f in rain_files_dir.iterdir() if f.is_file()]
     for filename in filenames:
-        # retrievie rain timeseries data
+        # retrieve rain timeseries data
         with open(filename, "r") as f:
             timeseries = np.array(
                 [
