@@ -42,3 +42,4 @@ docker-compose.override.yml
 rain_files*
 results*
 netcdf_rain_files*
+threedi_urban_eia_nl/api_key.py
