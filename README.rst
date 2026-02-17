@@ -29,7 +29,7 @@ Let op de volgende zaken:
   
 De berekening van de herhalingstijden wordt hier verder toegelicht: https://www.riool.net/presenteren-van-milieutechnisch-functioneren
 
-Om de statistieken over de simulaties te berekenen moeten de onderstaande aggregation settings zijn gedefinieerd. 
+De benodigde aggregation settings worden door de tool zelf ingesteld in de simulatie. Hier hoef je als gebruiker niets voor te doen (dit was in eerdere versies van deze tool wel het geval). De onderstaande aggregation settings worden toegepast.
 
 +---------------+--------------------+-----------+
 | Flow variable | Aggregation method | Time step |
@@ -43,16 +43,7 @@ Om de statistieken over de simulaties te berekenen moeten de onderstaande aggreg
 
 Dit betreft het cumulatieve volume dat over de overstort gaat, het cumulatieve volume in positieve richting en het cumulatieve volume in negatieve richting.
 
-Hiervoor kan je de volgende SQL gebruiken::
-
-    INSERT INTO aggregation_settings (flow_variable, aggregation_method, time_step)
-    VALUES
-        ('discharge', 'cum', '3600'),
-        ('discharge', 'cum_positive', '3600'),
-        ('discharge', 'cum_negative', '3600')
-    ;
-
-Zet de output time step ook hoog (bv 3600) omdat je anders erg grote results_3di.nc NetCDFs krijgt.
+Zet de output time step ook hoog (bv 3600) omdat je anders erg grote results_3di.nc NetCDFs krijgt bij het gebruik van DEBUG mode.
 
 Installatie
 -----------
@@ -67,11 +58,13 @@ Gebruikershandleiding
 Doorloop de volgende stappen om ervoor te zorgen dat deze tool correct werkt:
 
 #. Controleer de schematisatie en simulatie-instellingen (zie "Aandachtspunten 3Di model")
-#. Maak een map met alle neerslagbestanden die je in je simulaties wilt gebruiken. Deze regenbestanden moeten het 'min,mm'-formaat hebben, waarbij min de tijdstap in minuten is en mm de hoeveelheid regen die tijdens de tijdstap valt, in millimeters. Elke tijdstap wordt gescheiden door een nieuwe regel, zoals in het onderstaande voorbeeld::
+#. Maak een map met alle neerslagbestanden die je in je simulaties wilt gebruiken.
+#. De naam van het bestand moet het volgende format hebben: "{naam bui} {YYYYmmddHHMMSS}.csv", waarbij Y = jaar, m = maand, d = dag, H = uur, M = minuut, S = seconde. Bijvoorbeeld: "isahw122 19600822200000.csv". De bestandsextensie maakt niet uit.
+#. De inhoud van het bestand moet een CSV-indeling hebben, zonder kolomnamen/headers, met twee kolommen: tijdstap [minuten] en neerslag [mm/tijdstap]),mm'. Elke tijdstap wordt gescheiden door een nieuwe regel, zoals in het onderstaande voorbeeld::
 
-    0,5,0
-    30,1,5
-    60,0,0
+    0,5.0
+    30,1.5
+    60,0.0
 #. Maak een uitvoermap waarin de resultaatbestanden worden opgeslagen.
 #. Zoek de ID van uw 3Di-model op 3Di Management
 #. Voer op de opdrachtregel ``run-rain-series-simulations --help`` uit om te zien welke argumenten u moet opgeven.

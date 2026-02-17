@@ -388,7 +388,7 @@ def create_simulations_from_rain_events(
     files = [f for f in rain_files_dir.iterdir() if f.is_file()]
     for i, file in enumerate(files):
         printProgressBar(i + 1, len(files), "Creating rain event simulations")
-        # retrievie rain timeseries data
+        # retrieve rain timeseries data
         with open(file, "r") as f:
             timeseries = np.array(
                 [
@@ -404,7 +404,7 @@ def create_simulations_from_rain_events(
             warnings.append(f"Warning: {file.name} last rain intensity value is not 0")
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
-        filename_datetime = datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
+        filename_datetime = datetime.strptime(file.stem.split()[-1], "%Y%m%d%H%M%S")
         tz = pytz.timezone("Europe/Amsterdam")
         localized = tz.localize(filename_datetime)
         with_utc_time_zone = localized.astimezone(tz=pytz.UTC)
