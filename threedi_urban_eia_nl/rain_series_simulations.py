@@ -569,7 +569,7 @@ def create_rain_series_simulations(
         api: V3BetaApi
 
         # Setup simulation and in dry state to create saved states
-        # Or use collect saved states from existing saved states simulation
+        # Or collect saved states from existing saved states simulation
         if saved_states_simulation_id:
             simulation_dwf = api.simulations_read(saved_states_simulation_id)
             saved_states = get_saved_states(api, simulation_dwf)
