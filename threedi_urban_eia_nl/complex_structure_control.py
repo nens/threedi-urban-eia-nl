@@ -1,11 +1,13 @@
 import asyncio
+import logging
 import tempfile
 import time
 from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Literal, List, Dict, Callable
+from typing import Optional, Literal, List, Dict, Callable, Tuple
 
 import numpy as np
 import urllib3
@@ -18,13 +20,14 @@ from threedigrid.admin.gridadmin import GridH5Admin
 
 DOWNLOAD_TIMEOUT = urllib3.Timeout(connect=60, read=600)
 
+
 @dataclass
 class MeasureLocation:
     code: str
     name: str
     connection_node_id: int
     node_id: Optional[int] = None
-    water_levels: Optional[List[float]] = field(default_factory=list)
+    water_levels: Optional[List[List[float]]] = field(default_factory=list)
 
     def get_node_id(self, gridadmin_path):
         ga = GridH5Admin(gridadmin_path)
@@ -36,14 +39,14 @@ class MeasureLocation:
         if len(self.water_levels) < 2:
             return False
         else:
-            return (self.water_levels[-1]) > (self.water_levels[-2])
+            return (self.water_levels[-1][-1]) > (self.water_levels[-2][-1])
 
     @property
     def is_falling(self):
         if len(self.water_levels) < 2:
             return False
         else:
-            return (self.water_levels[-1]) < (self.water_levels[-2])
+            return (self.water_levels[-1][-1]) < (self.water_levels[-2][-1])
 
     def is_below_last_peak(self, threshold: float) -> bool:
         """
@@ -59,7 +62,8 @@ class MeasureLocation:
         bool
             True if last value is at least `threshold` below the last peak, else False.
         """
-        levels = np.array(self.water_levels)
+        levels = np.array(self.water_levels)[:, -1]
+
         n = len(levels)
         if n < 3:
             return False  # need at least 3 points to have a peak
@@ -84,11 +88,10 @@ class Structure:
     discharge_coefficients: Optional[List[float]]
     is_open: bool = True
 
-    def set_valve(
+    def close_valve(
         self,
         api_client: V3Api,
         simulation: Simulation,
-        action: Literal["open", "close"],
         offset: int,
         duration: int,
         max_retries: int = 900,
@@ -96,19 +99,14 @@ class Structure:
     ):
         """
         Open or close the structure using a timed control.
-        Will not open it if it is already open / close if already closed.
+        The idea is that it is used for a single measure_frequency time step
         """
-        if action not in ["open", "close"]:
-            raise ValueError('action must be one of ["open", "close"]')
-        if (action == "open" and self.is_open) or (action == "close" and not self.is_open):
-            return
-        value = self.discharge_coefficients if action == "open" else [0, 0]
         structure_control = api_client.simulations_events_structure_control_timed_create(
             simulation_pk=simulation.id,
             data={
                 "offset": offset,
                 "duration": duration,
-                "value": value,
+                "value": [0, 0],
                 "type": "set_discharge_coefficients",
                 "structure_id": self.id,
                 "structure_type": f"v2_{self.type}"
@@ -125,7 +123,7 @@ class Structure:
                     time.sleep(wait_time)
                 case "valid":
                     print("Finished processing timed control")
-                    self.is_open = action == "open"
+                    self.is_open = False
                     return
                 case "invalid":
                     raise Exception(
@@ -138,20 +136,60 @@ class Structure:
             f"structure control actions was still not processed"
         )
 
+    def open_valve(self):
+        """
+        Update the administration of this structure.
+        Does not affect any timed controls, as the idea is that close actions are valid for a single `measure_frequency`
+         time step only
+        """
+        self.is_open = True
 
-@dataclass
+
 class SimulationManager:
     """Object that manages a simulation client-side to implement complex structure control"""
-    parent: 'QueueManager'
-    api_client: V3Api
-    simulation: Simulation
-    structures: Dict[str, Structure]
-    measure_locations: Dict[str, MeasureLocation]
-    measure_frequency: int
-    structure_control_logic: Callable[
-        [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
-        None
-    ]
+
+    def __init__(
+        self,
+        parent: 'QueueManager',
+        api_client: V3Api,
+        simulation: Simulation,
+        structures: Dict[str, Structure],
+        measure_locations: Dict[str, MeasureLocation],
+        measure_frequency: int,
+        structure_control_logic: Callable[
+            [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation], float, Optional[logging.Logger]],
+            None
+        ],
+        log_dir: Path | None = None,
+    ):
+
+        self.parent = parent
+        self.api_client = api_client
+        self.simulation = simulation
+        self.structures = structures
+        self.measure_locations = measure_locations
+        self.measure_frequency = measure_frequency
+        self.structure_control_logic = structure_control_logic
+
+        # Create a unique logger for this instance
+        self.logger = logging.getLogger(f"Simulation.{simulation.id}_{simulation.name}")
+        self.logger.setLevel(logging.DEBUG)
+
+        # Prevent double handlers if multiple instances are created
+        if not self.logger.handlers:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_filename = f"{simulation.id}_{simulation.name}_{timestamp}.log"
+            log_path = log_dir / log_filename if log_dir else Path(log_filename)
+            handler = logging.FileHandler(log_path)
+            handler.setLevel(logging.DEBUG)
+
+            formatter = logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            handler.setFormatter(formatter)
+
+            self.logger.addHandler(handler)
 
     def resume(self):
         """Starts or resumes the simulation. Informs the queue manager if simulation is finished"""
@@ -211,11 +249,20 @@ class SimulationManager:
         else:
             raise RuntimeError(f"Simulation {self.simulation.id} has unknown status '{status.name}'")
 
-    def read_water_levels(self, current_simulation_time: int):
+    def finish(self):
+        self.logger.info("Water levels read during simulation:")
+        for measure_location_name, measure_location in self.measure_locations.items():
+            self.logger.info(f"Measure location {measure_location_name}")
+            self.logger.info(str(measure_location.water_levels))
+
+    def read_water_levels(self, current_simulation_time: float):
+        """
+        Read water level for each measure location and append it to that measure location's .water_levels attribute
+        """
         for name in self.measure_locations.keys():
             measure_location = self.measure_locations[name]
             try:
-                water_level = read_water_level(
+                time_step, water_level = read_water_level(
                     api_client=self.api_client,
                     simulation_id=self.simulation.id,
                     start_time=current_simulation_time - self.measure_frequency,  # only works while the simulation is paused
@@ -227,7 +274,7 @@ class SimulationManager:
                     return
                 else:
                     raise
-            measure_location.water_levels.append(water_level)
+            measure_location.water_levels.append([time_step, water_level])
 
     def apply_structure_control_logic(self):
         wait_times = [1, 2, 5, 10, 20, 60, -9999]  # last wait time will be ignored
@@ -245,13 +292,15 @@ class SimulationManager:
             self.parent.finish(self.simulation.id)
         elif status.name == "initialized":
             if status.paused:
-                self.read_water_levels(int(status.time))
+                self.read_water_levels(status.time)
                 self.structure_control_logic(
                     self.api_client,
                     self.simulation,
                     status.time,
                     self.structures,
-                    self.measure_locations
+                    self.measure_locations,
+                    self.measure_frequency,
+                    self.logger,
                 )
             else:
                 pass  # just wait until the next round
@@ -268,9 +317,10 @@ class QueueManager:
             measure_locations: Dict[str, MeasureLocation],
             measure_frequency: int,
             structure_control_logic: Callable[
-                [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
+                [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation], float, Optional[logging.Logger]],
                 None
-            ]
+            ],
+            log_dir: Path | None = None
     ):
         self.api_client = api_client
         self.queued_simulations: List[Simulation] = []
@@ -280,6 +330,7 @@ class QueueManager:
         self.measure_locations = measure_locations
         self.measure_frequency = measure_frequency
         self.structure_control_logic = structure_control_logic
+        self.log_dir = log_dir
 
     @property
     def running_simulations(self) -> Dict[int, SimulationManager]:
@@ -312,9 +363,10 @@ class QueueManager:
                 measure_locations=deepcopy(self.measure_locations),
                 measure_frequency=self.measure_frequency,
                 structure_control_logic=self.structure_control_logic,
+                log_dir=self.log_dir,
             )
             self._running_simulations[simulation.id] = simulation_manager
-            print(f"Added simulation {simulation.id} to running simulations")
+            simulation_manager.logger.info(f"Added simulation {simulation.id} to running simulations")
             return True
         else:
             return False
@@ -326,6 +378,7 @@ class QueueManager:
         Raises IndexError if given simulation was not in running simulations
         """
         simulation_manager = self._running_simulations.pop(simulation_id)
+        simulation_manager.finish()
         self.finished_simulations.append(simulation_manager.simulation)
         print(f"Finished simulation {simulation_manager.simulation.id}")
         self.run_next()
@@ -380,9 +433,9 @@ def download_gridadmin(simulation: Simulation, api_client: V3Api) -> Path:
 async def read_websocket_data(
         api_client: V3Api,
         simulation_id: int,
-        start_time: int,
+        start_time: float,
         node_id: int
-):
+) -> Tuple[float, float]:
     water_level_websocket_url = api_client.simulations_visualisations_water_level_graph_create(
         simulation_pk=simulation_id,
         data={"start_time": start_time, "subscribe": False, "node_id": node_id}
@@ -390,21 +443,23 @@ async def read_websocket_data(
     connection_success = False
     async with websockets.connect(water_level_websocket_url.url) as websocket:
         connection_success = True
-        water_level = -9999
+        water_level = -9999.0
         async for message in websocket:
             data = np.frombuffer(message, dtype=np.float32)
+            time_step = data[-2]
             water_level = data[-1]
-        return water_level if ~np.isnan(water_level) else -9999
+        water_level = -9999.0 if np.isnan(water_level) else water_level
+        return time_step, water_level
     if not connection_success:
         raise RuntimeError("Could not connect to websocket")
 
 
 @retry_on_500()
-def read_water_level(api_client: V3Api, simulation_id: int, start_time: int, node_id: int):
+def read_water_level(api_client: V3Api, simulation_id: int, start_time: float, node_id: int) -> Tuple[float, float]:
     """
     Sync wrapper around async read_websocket_data function
     """
-    water_level = asyncio.run(
+    time_step, water_level = asyncio.run(
         read_websocket_data(
             api_client=api_client,
             simulation_id=simulation_id,
@@ -412,7 +467,7 @@ def read_water_level(api_client: V3Api, simulation_id: int, start_time: int, nod
             node_id=node_id,
         )
     )
-    return water_level
+    return time_step, water_level
 
 
 def simulate_with_complex_structure_control(
@@ -422,7 +477,7 @@ def simulate_with_complex_structure_control(
         structures: Dict,
         measure_frequency,
         structure_control_logic: Callable[
-            [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
+            [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation], float, Optional[logging.Logger]],
             None
         ]
 
@@ -479,10 +534,10 @@ def simulate_with_complex_structure_control(
             for name in measure_locations.keys():
                 measure_location = measure_locations[name]
                 try:
-                    water_level = read_water_level(
+                    time_step, water_level = read_water_level(
                         api_client=api_client,
                         simulation_id=simulation.id,
-                        start_time=int(status.time) - measure_frequency,  # only works while the simulation is paused
+                        start_time=status.time - measure_frequency,  # only works while the simulation is paused
                         node_id=measure_location.node_id
                     )
                 except ApiException:
@@ -491,11 +546,19 @@ def simulate_with_complex_structure_control(
                         return
                     else:
                         raise
-                measure_location.water_levels.append(water_level)
+                measure_location.water_levels.append([time_step, water_level])
 
             # perform calculations to decide what needs to be done with the orifices
             # # Note that water level is -9999 if node is dry
-            structure_control_logic(api_client, simulation, status.time, structures, measure_locations)
+            structure_control_logic(
+                api_client,
+                simulation,
+                status.time,
+                structures,
+                measure_locations,
+                measure_frequency,
+                None
+            )
 
 
 def multiple_simulate_with_complex_structure_control(
@@ -505,10 +568,10 @@ def multiple_simulate_with_complex_structure_control(
         structures: Dict,
         measure_frequency,
         structure_control_logic: Callable[
-            [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation]],
+            [V3Api, Simulation, int, Dict[str, Structure], Dict[str, MeasureLocation], float, Optional[logging.Logger]],
             None
-        ]
-
+        ],
+        log_dir: Path | None = None
 ):
     """
     Run a simulation that is paused every `measure_frequency` seconds to evaluate `structure_control_logic`.
@@ -549,6 +612,7 @@ def multiple_simulate_with_complex_structure_control(
         measure_locations=measure_locations,
         structures=structures,
         structure_control_logic=structure_control_logic,
+        log_dir=log_dir,
     )
     queue_manager.queued_simulations = simulations
     queue_manager.fill_running()

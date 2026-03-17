@@ -160,18 +160,21 @@ def create_simulation(
     duration: int,
     start_datetime: str,
     simulation_name="rain series calculation",
+    template_id: int = None
 ) -> Simulation:
     """Create simulation from threedimodel simulation template."""
-    result = api_call(
-        api.simulation_templates_list,
-        **{"simulation__threedimodel__id": threedimodel_id},
-    )
-    if len(result.results) == 0:
-        raise ValueError("No simulation template for ThreediModel")
+    if template_id is None:
+        result = api_call(
+            api.simulation_templates_list,
+            **{"simulation__threedimodel__id": threedimodel_id},
+        )
+        if len(result.results) == 0:
+            raise ValueError("No simulation template for ThreediModel")
+        template: Template = result.results[0]
+        template_id = template.id
 
-    template: Template = result.results[0]
     from_template = FromTemplate(
-        template=template.id,
+        template=template_id,
         name=simulation_name,
         organisation=organisation,
         duration=duration,
@@ -453,7 +456,8 @@ def create_simulations_from_rain_events(
     threedimodel_id: int,
     organisation_id: str,
     rain_files_dir: Path,
-    skip_files: List[str]
+    skip_files: List[str],
+    template_id: int = None,
 ) -> List[Simulation]:
     """
     Read start time from rain files filename and create simulations with the
@@ -503,6 +507,7 @@ def create_simulations_from_rain_events(
             time[-1] + 30 * 60,  # extend the simulation 30 minutes to be safe
             filename_date,
             f"rain series calculation {file.name.split('.')[0]}",
+            template_id=template_id
         )
         api_call(
             api.simulations_initial_saved_state_create,
@@ -689,6 +694,7 @@ def create_rain_series_simulations(
     apikey: str,
     organisation: str,
     host: str,
+    template_id: int = None,
 ):
     """
     \b
@@ -763,7 +769,9 @@ def create_rain_series_simulations(
             print(f"Results JSON contains {len(finished_simulations)} simulations, resuming from there")
 
         rain_event_simulations = create_simulations_from_rain_events(
-            api, saved_states, threedimodel_id, organisation, rain_files_dir, skip_files=finished_simulations
+            api, saved_states, threedimodel_id, organisation, rain_files_dir,
+            skip_files=finished_simulations,
+            template_id=template_id
         )
 
         if results_json:
@@ -772,13 +780,18 @@ def create_rain_series_simulations(
             results_file = Path(
                 results_dir, f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
             )
+
+        log_dir = results_dir / "log"
+        log_dir.mkdir(parents=True, exist_ok=True)
+
         for finished_simulation in multiple_simulate_with_complex_structure_control(
             api_client=api,
             simulations=rain_event_simulations,
             measure_locations=harderwijk.MEASURE_LOCATIONS,
             structures=harderwijk.STRUCTURES,
             measure_frequency=300,
-            structure_control_logic=harderwijk.structure_control_logic
+            structure_control_logic=harderwijk.structure_control_logic,
+            log_dir=log_dir
         ):
             append_or_create_result_file(
                 threedimodel_id=threedimodel_id,
@@ -790,28 +803,11 @@ def create_rain_series_simulations(
             )
 
 
-if __name__ == "__main__":
-    # create_rain_series_simulations()
-
-    from api_key import PERSONAL_API_KEY
-    #
-    # create_rain_series_simulations.callback(
-    #     threedimodel_id=76095,
-    #     saved_states_simulation_id=371329,
-    #     # rain_files_dir=Path(r"G:\Projecten Z (2024)\Z0062 - SSW gemeente Harderwijk\Gegevens\Bewerking\Scripts\complexe sturing\buien"),
-    #     rain_files_dir=Path(r"buien"),
-    #     # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
-    #     results_dir=Path("complexe_sturing/output_rev7"),
-    #     results_json="poging_20260206_1006",
-    #     apikey=PERSONAL_API_KEY,
-    #     organisation="4178c71845f14a3babc1b042e7505193",
-    #     host="https://api.3di.live",
-    # )
-
+def show_status(json_path: Path | str):
     f = get_rain_event_simulation_names(
-                        path=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7") / "poging_20260206_1006.json",
-                        remove_prefix="rain series calculation "
-                    )
+        path=Path(json_path),
+        remove_prefix="rain series calculation "
+    )
     config = {
         "THREEDI_API_HOST": "https://api.3di.live",
         "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
@@ -823,8 +819,52 @@ if __name__ == "__main__":
             status = api.simulations_status_list(simulation.id)
             statuses.append(status.name)
 
-    print(statuses)
     finished = [s for s in statuses if s == 'finished']
     print(f"finished: {len(finished)}")
     print(f"total: {len(statuses)}")
-    print(f"original total: {len(f)}")
+
+
+if __name__ == "__main__":
+    # create_rain_series_simulations()
+
+    from api_key import PERSONAL_API_KEY
+
+    # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/herberekening_time_step_1s")
+    # results_json = "herberekening_time_step_1s.json"
+    # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/debug_20260316_1633")
+    results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260317_2138")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    results_json = "debug_20260317_2138.json"
+
+    create_rain_series_simulations.callback(
+        threedimodel_id=76095,
+        saved_states_simulation_id=371329,
+        rain_files_dir=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/debugbui 190"),
+        # rain_files_dir=Path(r"buien_1s"),
+        # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+        results_dir=results_dir,
+        results_json=results_json,
+        apikey=PERSONAL_API_KEY,
+        organisation="4178c71845f14a3babc1b042e7505193",
+        host="https://api.3di.live",
+        template_id=31106,
+    )
+
+    # show_status(results_dir / results_json)
+    #
+    # simulation_ids = [382091, 382098, 382101, 382104]
+    # config = {
+    #     "THREEDI_API_HOST": "https://api.3di.live",
+    #     "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
+    # }
+    # with ThreediApi(config=config, version="v3-beta") as api:
+    #     for simulation_id in simulation_ids:
+    #         status = api.simulations_status_list(simulation_pk=simulation_id)
+    #         print(status)
+    #         api.simulations_actions_create(
+    #             simulation_pk=simulation_id,
+    #             data={
+    #                 "name": "start",
+    #                 "duration": 300
+    #             }
+    #         )

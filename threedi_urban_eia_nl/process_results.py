@@ -214,10 +214,10 @@ def download_results(
                             target_file_name
                         )
 
-                    if debug and result.filename.startswith("log"):
+                    if debug:
                         "Download log files and unzip"
                         sim_dir = simulations_dir / f"{simulation_id}-isahw{isahw}"
-                        sim_dir.mkdir(parents=True)
+                        sim_dir.mkdir(parents=True, exist_ok=True)
                         download = api_call(
                             api.simulations_results_files_download,
                             *(
@@ -229,10 +229,11 @@ def download_results(
                             download.get_url,
                             Path(sim_dir, result.filename),
                         )
-                        with zipfile.ZipFile(
-                            sim_dir / f"log_files_sim_{simulation_id}.zip", "r"
-                        ) as zip:
-                            zip.extractall(sim_dir)
+                        if result.filename.startswith("log"):
+                            with zipfile.ZipFile(
+                                sim_dir / f"log_files_sim_{simulation_id}.zip", "r"
+                            ) as zip:
+                                zip.extractall(sim_dir)
                 print(f"Downloaded simulation {simulation_name}, ID {simulation_id}")
 
     printProgressBar(total, total, "Downloading result files")
@@ -244,7 +245,7 @@ def download_results(
         Path(results_dir, "gridadmin").with_suffix(".h5"),
     )
 
-    # Carshes feedback
+    # Crashes feedback
     if len(crashes) > 0:
         print(
             f"WARNING: {len(crashes)} simulations crashed, see crashed_simulations.json"
@@ -362,9 +363,16 @@ if __name__ == "__main__":
         "THREEDI_API_HOST": "https://api.3di.live",
         "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
     }
-    results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7")
+    # results_dir = Path(
+    #     "I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/debug_20260316"
+    # )
+    results_dir = Path(
+        "C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260317_2138"
+    )
+    (results_dir / "simulations").mkdir(parents=True, exist_ok=True)
+
     downloaded_result_ids = extract_ids_from_directory(parent=results_dir/"simulations")
-    results_json = results_dir / "poging_20260206_1006.json"
+    results_json = results_dir / "debug_20260317_2138.json"
     with results_json.open("r") as f:
         created_simulations = json.loads(f.read())
         results_to_be_downloaded = [r for r in created_simulations["rain_event_simulations"] if r["id"] not in downloaded_result_ids]
