@@ -832,9 +832,9 @@ if __name__ == "__main__":
     # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/herberekening_time_step_1s")
     # results_json = "herberekening_time_step_1s.json"
     # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/debug_20260316_1633")
-    results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260317_2138")
+    results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260320_1526")
     results_dir.mkdir(parents=True, exist_ok=True)
-    results_json = "debug_20260317_2138.json"
+    results_json = "debug_20260317_1526.json"
 
     create_rain_series_simulations.callback(
         threedimodel_id=76095,

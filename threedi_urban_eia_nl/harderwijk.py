@@ -107,9 +107,9 @@ def structure_control_logic(
             action = "close"
         else:
             # Case: stuwputten staan open en moeten open blijven; geen verandering, dus niet loggen
-            logger.debug(f"Reden voor actie: stuwputten staan open en moeten open blijven.")
+            logger.debug(f"Stuwputten staan open en moeten open blijven.")
             log_level = logging.DEBUG
-            action = "open"
+            action = None
     elif not any([structure.is_open for structure in structures.values()]):  # als alle stuwputten dicht staan...
         logger.debug("Alle stuwputten zijn dicht")
 
@@ -147,26 +147,20 @@ def structure_control_logic(
             action = "open"
         else:
             # Case: stuwputten staan dicht en moeten dicht blijven; geen verandering, dus niet loggen
-            logger.debug(f"Reden voor actie: stuwputten staan dicht en moeten dicht blijven.")
+            logger.debug(f"Stuwputten staan dicht en moeten dicht blijven.")
             log_level = logging.DEBUG
-            action = "close"
+            action = None
     else:
         raise NotImplementedError(
             "Sommige stuwputten zijn open en sommige dicht, hier kan de regeling niet mee omgaan"
         )
-    logger.log(level=log_level, msg=f"Time step: {simulation_current_time}. Action: {action} all three orifices...")
-    if action == "close":
+    if action:
+        logger.log(level=log_level, msg=f"Time step: {simulation_current_time}. Action: {action} all three orifices...")
         for structure in structures.values():
-            structure.close_valve(
+            structure.set_valve(
                 api_client=api_client,
                 simulation=simulation,
+                action=action,
                 offset=simulation_current_time,
-                duration=measure_frequency + 10.0 * 2,  # let this timed control be active for measure_frequency seconds
-                                                        # plus two calculation time steps to avoid gaps between
-                                                        # timed controls
+                duration=simulation.duration,  # let this timed control be active until the end of the simulation
             )
-    elif action == "open":
-        for structure in structures.values():
-            structure.open_valve()
-    else:
-        raise RuntimeError("action should be 'open' or 'close'")

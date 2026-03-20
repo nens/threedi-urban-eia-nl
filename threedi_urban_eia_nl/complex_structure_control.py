@@ -88,6 +88,60 @@ class Structure:
     discharge_coefficients: Optional[List[float]]
     is_open: bool = True
 
+    def set_valve(
+        self,
+        api_client: V3Api,
+        simulation: Simulation,
+        action: Literal["open", "close"],
+        offset: int,
+        duration: int,
+        max_retries: int = 9000,
+        wait_time: float = 0.1,
+    ):
+        """
+        Open or close the structure using a timed control.
+        Will not open it if it is already open / close if already closed.
+        """
+        if action not in ["open", "close"]:
+            raise ValueError('action must be one of ["open", "close"]')
+        if (action == "open" and self.is_open) or (action == "close" and not self.is_open):
+            return
+        value = self.discharge_coefficients if action == "open" else [0, 0]
+        structure_control = api_client.simulations_events_structure_control_timed_create(
+            simulation_pk=simulation.id,
+            data={
+                "offset": offset,
+                "duration": duration,
+                "value": value,
+                "type": "set_discharge_coefficients",
+                "structure_id": self.id,
+                "structure_type": f"v2_{self.type}"
+            }
+        )
+        structure_control_id = structure_control.id
+        for i in range(max_retries):
+            structure_control = api_client.simulations_events_structure_control_timed_read(
+                simulation_pk=simulation.id,
+                id=structure_control_id,
+            )
+            match structure_control.state:
+                case "processing":
+                    time.sleep(wait_time)
+                case "valid":
+                    print("Finished processing timed control")
+                    self.is_open = action == "open"
+                    return
+                case "invalid":
+                    raise Exception(
+                        f"Something went wrong while processing timed control {structure_control_id}. "
+                        f"State: {structure_control.state}. "
+                        f"State detail: {structure_control.state_detail}"
+                    )
+        raise Exception(
+            f"After {max_retries} retries and wait time of {wait_time} seconds, "
+            f"structure control actions was still not processed"
+        )
+
     def close_valve(
         self,
         api_client: V3Api,
