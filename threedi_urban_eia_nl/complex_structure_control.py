@@ -247,12 +247,14 @@ class SimulationManager:
 
     def resume(self):
         """Starts or resumes the simulation. Informs the queue manager if simulation is finished"""
+        max_wait_time = 60
+        sleep_time = 0.1
         status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
         if status.name in ["finished", "crashed"]:
             self.parent.finish(self.simulation.id)
         elif status.name == "initialized":
             if status.paused:  # if simulation is initialized and not paused, it is just running
-                print(
+                self.logger.debug(
                     f"Resuming simulation {self.simulation.id} "
                     f"at {status.time} seconds, {int(status.time / self.simulation.duration * 100)} % ..."
                 )
@@ -267,19 +269,22 @@ class SimulationManager:
                     )
                 except ApiException as e:
                     if e.status == 400:
-                        print("Something fishy is going on, let's wait a bit and try again. Exception:")
-                        print(repr(e))
+                        self.logger.debug("Something fishy is going on, let's wait a bit and try again. Exception:")
+                        self.logger.debug(repr(e))
                     else:
                         raise e
                 total_waited = 0
                 while (
-                    total_waited < 60 and
+                    total_waited < max_wait_time and
                     status.name == "initialized" and
                     status.paused and
                     status.time == time_before_resuming
                 ):
                     # Wait for the simulation to resume
-                    sleep_time = 0.1
+                    if total_waited >= max_wait_time - sleep_time:
+                        self.logger.debug(f"Waited for {total_waited} seconds.")
+                        self.logger.debug(f"time_before_resuming: {time_before_resuming}")
+                        self.logger.debug(f"status: {status}")
                     time.sleep(sleep_time)
                     total_waited += sleep_time
                     status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
@@ -434,7 +439,7 @@ class QueueManager:
         simulation_manager = self._running_simulations.pop(simulation_id)
         simulation_manager.finish()
         self.finished_simulations.append(simulation_manager.simulation)
-        print(f"Finished simulation {simulation_manager.simulation.id}")
+        simulation_manager.logger.info(f"Finished simulation {simulation_manager.simulation.id}")
         self.run_next()
 
     def resume_running_simulations(self):
