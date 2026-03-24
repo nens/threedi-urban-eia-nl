@@ -103,7 +103,7 @@ class Structure:
         Will not open it if it is already open / close if already closed.
         """
         if action not in ["open", "close"]:
-            raise ValueError('action must be one of ["open", "close"]')
+            raise ValueError(f'action must be one of ["open", "close"]. Simulation ID: {simulation.id}')
         if (action == "open" and self.is_open) or (action == "close" and not self.is_open):
             return
         value = self.discharge_coefficients if action == "open" else [0, 0]
@@ -134,12 +134,13 @@ class Structure:
                 case "invalid":
                     raise Exception(
                         f"Something went wrong while processing timed control {structure_control_id}. "
+                        f"Simulation ID: {simulation.id}"
                         f"State: {structure_control.state}. "
                         f"State detail: {structure_control.state_detail}"
                     )
         raise Exception(
             f"After {max_retries} retries and wait time of {wait_time} seconds, "
-            f"structure control actions was still not processed"
+            f"structure control actions was still not processed. Simulation ID: {simulation.id}"
         )
 
     def close_valve(
@@ -182,12 +183,13 @@ class Structure:
                 case "invalid":
                     raise Exception(
                         f"Something went wrong while processing timed control {structure_control_id}. "
+                        f"Simulation ID: {simulation.id}. "
                         f"State: {structure_control.state}. "
                         f"State detail: {structure_control.state_detail}"
                     )
         raise Exception(
             f"After {max_retries} retries and wait time of {wait_time} seconds, "
-            f"structure control actions was still not processed"
+            f"structure control actions was still not processed. Simulation ID: {simulation.id}"
         )
 
     def open_valve(self):
@@ -272,6 +274,8 @@ class SimulationManager:
                         self.logger.debug("Something fishy is going on, let's wait a bit and try again. Exception:")
                         self.logger.debug(repr(e))
                     else:
+                        self.logger.debug("Exception!!")
+                        self.logger.debug(repr(e))
                         raise e
                 total_waited = 0
                 while (
@@ -306,6 +310,8 @@ class SimulationManager:
         elif status.name in ["starting", "queued", "ended", "postprocessing"]:
             pass  # just wait for the status to become one of the others that we can deal with
         else:
+            self.logger.debug("Exception!!")
+            self.logger.debug(f"Simulation {self.simulation.id} has unknown status '{status.name}'")
             raise RuntimeError(f"Simulation {self.simulation.id} has unknown status '{status.name}'")
 
     def finish(self):
@@ -327,12 +333,14 @@ class SimulationManager:
                     start_time=current_simulation_time - self.measure_frequency,  # only works while the simulation is paused
                     node_id=measure_location.node_id
                 )
-            except ApiException:
+            except ApiException as e:
                 status = self.api_client.simulations_status_list(simulation_pk=self.simulation.id)
                 if status.name in ["ended", "postprocessing", "finished", "crashed"]:
                     return
                 else:
-                    raise
+                    self.logger.debug("Exception!!")
+                    self.logger.debug(repr(e))
+                    raise e
             measure_location.water_levels.append([time_step, water_level])
 
     def apply_structure_control_logic(self):
@@ -345,6 +353,8 @@ class SimulationManager:
                     time.sleep(wait)
                     continue
                 else:
+                    self.logger.debug("Exception!!")
+                    self.logger.debug(repr(e))
                     raise e
 
         if status.name in ["finished", "crashed"]:
