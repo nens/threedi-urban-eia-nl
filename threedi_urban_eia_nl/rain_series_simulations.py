@@ -68,8 +68,9 @@ def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
     ).results
     for entry in current_settings:
         entry_id = entry.url.split("/")[-2]
-        api.simulations_settings_aggregation_delete(
-            id=entry_id, simulation_pk=simulation.id
+        api_call(
+            api.simulations_settings_aggregation_delete,
+            **{"id": entry_id, "simulation_pk": simulation.id},
         )
 
     # post the new settings
@@ -82,8 +83,9 @@ def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
         for method in REQUIRED_AGGREGATION_METHODS
     ]
     for aggregation_setting in aggregation_settings:
-        api.simulations_settings_aggregation_create(
-            simulation.id, data=aggregation_setting
+        api_call(
+            api.simulations_settings_aggregation_create,
+            **{"simulation_pk": simulation.id, "data": aggregation_setting},
         )
 
 
