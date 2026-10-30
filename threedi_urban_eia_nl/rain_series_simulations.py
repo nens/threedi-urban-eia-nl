@@ -12,8 +12,7 @@ import click
 import netCDF4 as nc4
 import numpy as np
 import pytz
-# from sqlalchemy import create_engine, text
-# from sqlalchemy.orm import Session
+
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
 from threedi_api_client.openapi.exceptions import ApiException
@@ -62,13 +61,21 @@ def printProgressBar(iteration, total, text, length=100):
 
 
 def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
-    """Set aggregation settings to those required for urban environmental impact assessment"""
+    """
+    Set aggregation settings to those required for
+    urban environmental impact assessment
+    """
 
     # delete existing settings
-    current_settings = api.simulations_settings_aggregation_list(simulation.id, limit=99).results
+    current_settings = api.simulations_settings_aggregation_list(
+        simulation.id, limit=99
+    ).results
     for entry in current_settings:
         entry_id = entry.url.split("/")[-2]
-        api.simulations_settings_aggregation_delete(id=entry_id, simulation_pk=simulation.id)
+        api_call(
+            api.simulations_settings_aggregation_delete,
+            **{"id": entry_id, "simulation_pk": simulation.id},
+        )
 
     # post the new settings
     aggregation_settings = [
@@ -76,10 +83,14 @@ def set_correct_aggregation_settings(api: V3BetaApi, simulation: Simulation):
             "flow_variable": "discharge",
             "method": method,
             "interval": 3600,
-        } for method in REQUIRED_AGGREGATION_METHODS
+        }
+        for method in REQUIRED_AGGREGATION_METHODS
     ]
     for aggregation_setting in aggregation_settings:
-        api.simulations_settings_aggregation_create(simulation.id, data=aggregation_setting)
+        api_call(
+            api.simulations_settings_aggregation_create,
+            **{"simulation_pk": simulation.id, "data": aggregation_setting},
+        )
 
 
 def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> Path:
@@ -113,44 +124,6 @@ def download_model(api: V3BetaApi, threedimodel_id: int, results_dir: Path) -> P
                 )
 
     return path
-
-
-# def validate_model(model_path: Path):
-#     engine = create_engine(f"sqlite:///{model_path}")
-#     session = Session(engine)
-#
-#     database_schema_version = session.execute(
-#         text("SELECT version_num FROM schema_version;")
-#     ).scalar()
-#
-#     if int(database_schema_version) < 222:
-#         query = """
-#         SELECT interval, aggregation_method
-#         FROM v2_aggregation_settings
-#         WHERE flow_variable='discharge';
-#         """
-#     else:
-#         query = """
-#         SELECT interval, aggregation_method
-#         FROM aggregation_settings
-#         WHERE flow_variable='discharge';
-#         """
-#
-#     rows = [row for row in session.execute(text(query))]
-#     timesteps = np.array([row[0] for row in rows])
-#     aggregation_methods = set([row[1] for row in rows])
-#
-#     if not np.all(timesteps == 3600):
-#         raise ValueError(
-#             "All timestep fields for discharge in aggregation settings should be 3600."
-#         )
-#
-#     if aggregation_methods != REQUIRED_AGGREGATION_METHODS:
-#         raise ValueError(
-#             "Model does not contain correct aggregation settings for discharge. "
-#             f"Required aggregation settings are: {REQUIRED_AGGREGATION_METHODS}. "
-#             f"Current aggregation settings: {aggregation_methods}"
-#         )
 
 
 def create_simulation(
@@ -256,7 +229,7 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
     result = []
     filenames = [f for f in rain_files_dir.iterdir() if f.is_file()]
     for filename in filenames:
-        # retrievie rain timeseries data
+        # retrieve rain timeseries data
         with open(filename, "r") as f:
             timeseries = np.array(
                 [
@@ -303,53 +276,6 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
             }
         )
 
-        # # Create netcdf
-        # netcdf = h5py.File(
-        #     path,
-        #     mode="w",
-        # )
-
-        # # Global attributes
-        # netcdf.attrs["title"] = bytes(filename.name, encoding="utf-8")
-        # netcdf.attrs["institution"] = b"Nelen & Schuurmans"
-        # netcdf.attrs["SIMULATION_OFFSET"] = 0
-        # netcdf.attrs["SIMULATION_START_TIMESTEP"] = 0
-
-        # # Datasets
-
-        # netcdf.create_dataset(
-        #     "SIMULATION_START_TIMESTEP",
-        #     data=np.array([0]),
-        #     dtype=np.int32,
-        # )
-        # # one = netcdf.create_dataset(
-        # #     "one",
-        # #     np.array([0.0], dtype=np.float64),
-        # #     dtype=np.float64
-        # # )
-        # time = netcdf.create_dataset("time", data=time, dtype=np.float64)
-        # values = netcdf.create_dataset(
-        #     "values", data=values_converted, dtype=np.float64
-        # )
-
-        # # Dataset attributes
-        # # one.attrs["_Netcdf4Dimid"] = 1
-        # time.attrs["_Netcdf4Dimid"] = 0
-        # time.attrs["axis"] = b"T"
-        # time.attrs["calendar"] = b"standard"
-        # time.attrs["long_name"] = b"Time"
-        # time.attrs["standard_name"] = b"time"
-        # time.attrs["units"] = b"seconds since 1955-01-01 00:00:00.0 +0000'"
-        # values.attrs["_FillValue"] = np.array([-9999], dtype=np.int32)
-        # values.attrs["units"] = b"mm/h"
-
-        # # Set time as coordinate for values
-        # # one.make_scale("one")
-        # time.make_scale("time")
-        # values.dims[0].attach_scale(time)
-        # # values.dims[0].attach_scale(one)
-        # netcdf.close()
-
         f = nc4.Dataset(path, "w")
         f.CDI = "Climate Data Interface version ?? (httpf.//mpimet.mpg.de/cdi)"
         f.Conventions = "CF-1.5"
@@ -357,9 +283,6 @@ def convert_to_netcdf(rain_files_dir: Path) -> List[Dict]:
         f.GDAL = "GDAL 2.2.3, released 2017/11/20"
         f.NCO = "4.7.2"
         f.CDO = "Climate Data Operators version 1.9.3 (http://mpimet.mpg.de/cdo)"
-        # f.OFFSET = 0
-        # f.SIMULATION_OFFSET = 0
-        # f.SIMULATION_START_TIMESTEP = 0
 
         f.createDimension("time", None)  # infinite size
         f.createDimension("one", 1)
@@ -485,7 +408,7 @@ def create_simulations_from_rain_events(
             warnings.append(f"Warning: {file.name} last rain intensity value is not 0")
 
         # parse datetime from filename (NL datetime to UTC to timezone unaware)
-        filename_datetime = datetime.strptime(file.name.split()[-1], "%Y%m%d%H%M%S")
+        filename_datetime = datetime.strptime(file.stem.split()[-1], "%Y%m%d%H%M%S")
         tz = pytz.timezone("Europe/Amsterdam")
         localized = tz.localize(filename_datetime)
         with_utc_time_zone = localized.astimezone(tz=pytz.UTC)
@@ -538,6 +461,7 @@ def create_simulations_from_rain_events(
                 simulation.id,
                 **{"data": rain_data},
             )
+
         set_correct_aggregation_settings(api=api, simulation=simulation)
         rain_event_simulations.append(simulation)
 
@@ -712,16 +636,17 @@ def create_rain_series_simulations(
     if not results_dir.exists():
         raise FileNotFoundError("Results dir does not exist")
 
+    if not rain_files_dir.exists():
+        raise FileNotFoundError("Rain files dir does not exist")
+
     config = {
         "THREEDI_API_HOST": host,
         "THREEDI_API_PERSONAL_API_TOKEN": apikey,
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
-        # model_path = download_model(api, threedimodel_id, results_dir)
-        # validate_model(model_path)
-
         # Setup simulation and in dry state to create saved states
+        # Or collect saved states from existing saved states simulation
         if saved_states_simulation_id:
             simulation_dwf = api.simulations_read(saved_states_simulation_id)
             saved_states = get_saved_states(api, simulation_dwf)
@@ -745,17 +670,6 @@ def create_rain_series_simulations(
                 ),
             )
             await_simulation_completion(api, simulation_dwf)
-
-
-        # create netcdf files from rain timeseries and create simulations
-        # netcdfs = convert_to_netcdf(rain_files_dir)
-        # rain_event_simulations = create_simulations_from_netcdf_rain_events(
-        #     api,
-        #     saved_states,
-        #     netcdfs,
-        #     threedimodel_id,
-        #     organisation,
-        # )
 
         finished_simulations = []
         if results_json:

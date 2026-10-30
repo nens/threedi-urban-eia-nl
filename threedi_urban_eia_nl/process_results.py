@@ -175,8 +175,9 @@ def download_results(
     crashes = []
     total = len(rain_event_simulations)
     while len(remaining) > 0:
-        for simulation_id, simulation_name in remaining:
-            isahw: str = simulation_name.split("isahw")[1]
+        for simulation in remaining:
+            simulation_id: int = simulation[0]
+            simulation_name: str = simulation[1]
             printProgressBar(total - len(remaining), total, "Downloading result files")
             status: SimulationStatus = api_call(
                 api.simulations_status_list, simulation_id
@@ -216,8 +217,8 @@ def download_results(
 
                     if debug:
                         "Download log files and unzip"
-                        sim_dir = simulations_dir / f"{simulation_id}-isahw{isahw}"
-                        sim_dir.mkdir(parents=True, exist_ok=True)
+                        sim_dir = simulations_dir / f"{simulation_id}-{simulation_name}"
+                        sim_dir.mkdir(parents=True)
                         download = api_call(
                             api.simulations_results_files_download,
                             *(
