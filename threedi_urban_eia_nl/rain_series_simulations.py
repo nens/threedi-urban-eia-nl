@@ -12,6 +12,7 @@ import click
 import netCDF4 as nc4
 import numpy as np
 import pytz
+
 from threedi_api_client import ThreediApi
 from threedi_api_client.files import upload_file
 from threedi_api_client.openapi.exceptions import ApiException
@@ -28,6 +29,9 @@ from threedi_api_client.openapi.models import (
     UploadEventFile,
 )
 from threedi_api_client.versions import V3BetaApi
+
+import harderwijk
+from complex_structure_control import multiple_simulate_with_complex_structure_control
 
 RAIN_EVENTS_START_DATE = datetime(1955, 1, 1)
 REQUIRED_AGGREGATION_METHODS = {"cum", "cum_negative", "cum_positive"}
@@ -51,7 +55,7 @@ def api_call(call, *args, **kwargs):
 def printProgressBar(iteration, total, text, length=100):
     percent = int(100 * (iteration / total))
     bar = "#" * percent + "-" * (length - percent)
-    print(f"\r{text} |{bar}| {percent}% Completed", end="\r")
+    print(f"/r{text} |{bar}| {percent}% Completed", end="\r")
     if iteration == total:
         print()
 
@@ -129,18 +133,21 @@ def create_simulation(
     duration: int,
     start_datetime: str,
     simulation_name="rain series calculation",
+    template_id: int = None
 ) -> Simulation:
     """Create simulation from threedimodel simulation template."""
-    result = api_call(
-        api.simulation_templates_list,
-        **{"simulation__threedimodel__id": threedimodel_id},
-    )
-    if len(result.results) == 0:
-        raise ValueError("No simulation template for ThreediModel")
+    if template_id is None:
+        result = api_call(
+            api.simulation_templates_list,
+            **{"simulation__threedimodel__id": threedimodel_id},
+        )
+        if len(result.results) == 0:
+            raise ValueError("No simulation template for ThreediModel")
+        template: Template = result.results[0]
+        template_id = template.id
 
-    template: Template = result.results[0]
     from_template = FromTemplate(
-        template=template.id,
+        template=template_id,
         name=simulation_name,
         organisation=organisation,
         duration=duration,
@@ -356,13 +363,6 @@ def create_simulations_from_netcdf_rain_events(
             if netcdf.file.state == "processed":
                 started_simulations.append(simulation)
                 rain_event_simulations.remove(simulation)
-                api_call(
-                    api.simulations_actions_create,
-                    *(
-                        simulation.id,
-                        Action(name="queue"),
-                    ),
-                )
             elif netcdf.file.state == "error":
                 print(
                     f"Warning: error processing netcdf for simulation {simulation.id}.",
@@ -379,6 +379,8 @@ def create_simulations_from_rain_events(
     threedimodel_id: int,
     organisation_id: str,
     rain_files_dir: Path,
+    skip_files: List[str],
+    template_id: int = None,
 ) -> List[Simulation]:
     """
     Read start time from rain files filename and create simulations with the
@@ -387,7 +389,7 @@ def create_simulations_from_rain_events(
     """
     rain_event_simulations = []
     warnings = []
-    files = [f for f in rain_files_dir.iterdir() if f.is_file()]
+    files = [f for f in rain_files_dir.iterdir() if f.is_file() and f.name not in skip_files]
     for i, file in enumerate(files):
         printProgressBar(i + 1, len(files), "Creating rain event simulations")
         # retrieve rain timeseries data
@@ -428,6 +430,7 @@ def create_simulations_from_rain_events(
             time[-1] + 30 * 60,  # extend the simulation 30 minutes to be safe
             filename_date,
             f"rain series calculation {file.name.split('.')[0]}",
+            template_id=template_id
         )
         api_call(
             api.simulations_initial_saved_state_create,
@@ -461,13 +464,6 @@ def create_simulations_from_rain_events(
 
         set_correct_aggregation_settings(api=api, simulation=simulation)
         rain_event_simulations.append(simulation)
-        api_call(
-            api.simulations_actions_create,
-            *(
-                simulation.id,
-                Action(name="queue"),
-            ),
-        )
 
     for warning in warnings:
         print(warning)
@@ -496,6 +492,76 @@ def create_result_file(
         print(f"Writing output to {results_file}")
 
 
+def append_or_create_result_file(
+    threedimodel_id: int,
+    simulation_dwf: Simulation,
+    rain_event_simulation: Simulation,
+    saved_states: List[SavedStateOverview],
+    results_file: Path | str,
+    overwrite: bool = False,
+) -> None:
+    """
+    Add a single rain-event simulation to the JSON results file.
+    If the file does not exist, it will be created with all fields.
+    If overwrite=True, the entire file is recreated.
+    """
+
+    results_file = Path(results_file)
+
+    # ---- CASE 1: Overwrite the file completely ----
+    if overwrite or not results_file.exists():
+        data = {
+            "threedimodel_id": threedimodel_id,
+            "simulation_dwf": simulation_dwf.to_dict(),
+            "rain_event_simulations": [rain_event_simulation.to_dict()],
+            "saved_states": [ss.to_dict() for ss in saved_states],
+        }
+
+        results_file.parent.mkdir(parents=True, exist_ok=True)
+        with results_file.open("w") as f:
+            json.dump(data, f, indent=4, default=str)
+
+        print(f"[INFO] Created/overwritten results file at {results_file}")
+        return
+
+    # ---- CASE 2: File exists → append to existing structure ----
+    with results_file.open("r") as f:
+        existing_data = json.load(f)
+
+    # Append new simulation
+    if "rain_event_simulations" not in existing_data:
+        existing_data["rain_event_simulations"] = []
+    existing_data["rain_event_simulations"].append(rain_event_simulation.to_dict())
+
+    # Save updated file
+    with results_file.open("w") as f:
+        json.dump(existing_data, f, indent=4, default=str)
+
+    print(f"[INFO] Added 1 simulation to existing file: {results_file}")
+
+
+def get_rain_event_simulation_names(path: Path | str, remove_prefix: str):
+    """
+    Return a list of cleaned simulation names from the JSON file.
+    Removes the `remove_prefix` from each name.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    sims = data.get("rain_event_simulations", [])
+
+    cleaned = []
+
+    for sim in sims:
+        name = sim.get("name", "")
+        # remove prefix only if it appears
+        if name.lower().startswith(remove_prefix):
+            name = name[len(remove_prefix):]
+        cleaned.append(name)
+
+    return cleaned
+
+
 @click.command()
 @click.argument(
     "threedimodel_id",
@@ -515,6 +581,14 @@ def create_result_file(
 @click.argument(
     "results_dir",
     type=click.Path(exists=True, writable=True, path_type=Path),
+)
+@click.option(
+    "-j",
+    "--results_json",
+    type=str,
+    default=None,
+    help="Name of the json file (in results_dir) to write results to. "
+         "If exists, will be used to continue an aborted/failed rain series",
 )
 @click.option(
     "-o",
@@ -540,9 +614,11 @@ def create_rain_series_simulations(
     saved_states_simulation_id: int | None,
     rain_files_dir: Path,
     results_dir: Path,
+    results_json: str,
     apikey: str,
     organisation: str,
     host: str,
+    template_id: int = None,
 ):
     """
     \b
@@ -569,7 +645,6 @@ def create_rain_series_simulations(
     }
     with ThreediApi(config=config, version="v3-beta") as api:
         api: V3BetaApi
-
         # Setup simulation and in dry state to create saved states
         # Or collect saved states from existing saved states simulation
         if saved_states_simulation_id:
@@ -596,19 +671,117 @@ def create_rain_series_simulations(
             )
             await_simulation_completion(api, simulation_dwf)
 
+        finished_simulations = []
+        if results_json:
+            results_json_full_path = (results_dir / results_json).with_suffix(".json")
+            print(f"Found existing results JSON {results_json_full_path}")
+            if results_json_full_path.exists():
+                finished_simulations = get_rain_event_simulation_names(
+                    path=results_json_full_path,
+                    remove_prefix="rain series calculation "
+                )
+            print(f"Results JSON contains {len(finished_simulations)} simulations, resuming from there")
+
         rain_event_simulations = create_simulations_from_rain_events(
-            api, saved_states, threedimodel_id, organisation, rain_files_dir
+            api, saved_states, threedimodel_id, organisation, rain_files_dir,
+            skip_files=finished_simulations,
+            template_id=template_id
         )
 
-        # write results to out_path
-        create_result_file(
-            threedimodel_id,
-            simulation_dwf,
-            rain_event_simulations,
-            saved_states,
-            results_dir,
-        )
+        if results_json:
+            results_file = (Path(results_dir) / results_json).with_suffix(".json")
+        else:
+            results_file = Path(
+                results_dir, f"created_simulations_{datetime.now().strftime('%Y-%m-%d')}.json"
+            )
+
+        log_dir = results_dir / "log"
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        for finished_simulation in multiple_simulate_with_complex_structure_control(
+            api_client=api,
+            simulations=rain_event_simulations,
+            measure_locations=harderwijk.MEASURE_LOCATIONS,
+            structures=harderwijk.STRUCTURES,
+            measure_frequency=300,
+            structure_control_logic=harderwijk.structure_control_logic,
+            log_dir=log_dir
+        ):
+            append_or_create_result_file(
+                threedimodel_id=threedimodel_id,
+                simulation_dwf=simulation_dwf,
+                rain_event_simulation=finished_simulation,
+                saved_states=saved_states,
+                results_file=results_file,
+                overwrite=False,
+            )
+
+
+def show_status(json_path: Path | str):
+    f = get_rain_event_simulation_names(
+        path=Path(json_path),
+        remove_prefix="rain series calculation "
+    )
+    config = {
+        "THREEDI_API_HOST": "https://api.3di.live",
+        "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
+    }
+    with ThreediApi(config=config, version="v3-beta") as api:
+        statuses = []
+        for simulation_name in f:
+            simulation = api.simulations_list(name=f"rain series calculation {simulation_name}").results[0]
+            status = api.simulations_status_list(simulation.id)
+            statuses.append(status.name)
+
+    finished = [s for s in statuses if s == 'finished']
+    print(f"finished: {len(finished)}")
+    print(f"total: {len(statuses)}")
 
 
 if __name__ == "__main__":
-    create_rain_series_simulations()
+    # create_rain_series_simulations()
+
+    from api_key import PERSONAL_API_KEY
+
+    # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/herberekening_time_step_1s")
+    # results_json = "herberekening_time_step_1s.json"
+    # results_dir = Path("/mnt/results/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_bui08")
+    results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_bui08")
+    # results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260320_1526")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    results_json = "bui08_20261029.json"
+
+    create_rain_series_simulations.callback(
+        threedimodel_id=86649,
+        saved_states_simulation_id=232412,
+        # rain_files_dir=Path("/mnt/results/Projecten_Z_2024/z0062_harderwijk/reeksberekening/bui08"),
+        rain_files_dir=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/bui08"),
+        # rain_files_dir=Path(r"buien_1s"),
+        # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
+        results_dir=results_dir,
+        results_json=results_json,
+        apikey=PERSONAL_API_KEY,
+        # organisation="4178c71845f14a3babc1b042e7505193",  # Nelen & Schuurmans Reeksberekening
+        organisation="61f5a464c35044c19bc7d4b42d7f58cb",  # Nelen & Schuurmans Consultancy,
+        host="https://api.3di.live",
+        template_id=43107,
+    )
+
+    # show_status(results_dir / results_json)
+    #
+    # simulation_ids = [382091, 382098, 382101, 382104]
+    # config = {
+    #     "THREEDI_API_HOST": "https://api.3di.live",
+    #     "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
+    # }
+    # with ThreediApi(config=config, version="v3-beta") as api:
+    #     for simulation_id in simulation_ids:
+    #         status = api.simulations_status_list(simulation_pk=simulation_id)
+    #         print(status)
+    #         api.simulations_actions_create(
+    #             simulation_pk=simulation_id,
+    #             data={
+    #                 "name": "start",
+    #                 "duration": 300
+    #             }
+    #         )

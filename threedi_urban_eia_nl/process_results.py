@@ -151,6 +151,7 @@ def download_results(
     results_dir: Path,
     threedimodel_id: int,
     debug: bool,
+    wipe_results_dir: bool = True,
 ) -> None:
     """
     Download results by checking remaining simulations for uploaded files.
@@ -159,12 +160,15 @@ def download_results(
     """
 
     # First clean results dir
-    for file in results_dir.iterdir():
-        if file.is_dir():
-            shutil.rmtree(Path(results_dir, file))
+    if wipe_results_dir:
+        for file in results_dir.iterdir():
+            if file.is_dir():
+                shutil.rmtree(Path(results_dir, file))
 
     aggregation_dir = results_dir / "aggregation_netcdfs"
-    aggregation_dir.mkdir()
+    aggregation_dir.mkdir(exist_ok=True)
+    crashed_aggregation_dir = aggregation_dir / "crashed"
+    crashed_aggregation_dir.mkdir(exist_ok=True)
 
     simulations_dir = results_dir / "simulations"
     remaining = [(sim["id"], sim["name"]) for sim in rain_event_simulations]
@@ -178,10 +182,7 @@ def download_results(
             status: SimulationStatus = api_call(
                 api.simulations_status_list, simulation_id
             )
-            if status.name == "crashed":
-                remaining.remove(simulation)
-                crashes.append(simulation)
-            elif status.name == "finished":
+            if status.name in ["finished", "crashed"]:
                 # wait for files to be uploaded
                 results = api_call(
                     api.simulations_results_files_list, simulation_id
@@ -193,7 +194,10 @@ def download_results(
                 ):
                     continue
 
-                remaining.remove(simulation)
+                remaining.remove((simulation_id, simulation_name))
+                if status.name == "crashed":
+                    crashes.append((simulation_id, simulation_name))
+                target_dir = aggregation_dir if status.name == "finished" else crashed_aggregation_dir
                 for result in results:
                     if result.filename.startswith("agg"):
                         download = api_call(
@@ -203,15 +207,15 @@ def download_results(
                                 simulation_id,
                             ),
                         )
+                        target_file_name = (
+                            target_dir / f"aggregate_results_3di_sim_{simulation_id}"
+                        ).with_suffix(".nc")
                         urlretrieve(
                             download.get_url,
-                            Path(
-                                aggregation_dir,
-                                f"aggregate_results_3di_sim_{simulation_id}",
-                            ).with_suffix(".nc"),
+                            target_file_name
                         )
 
-                    if debug and result.filename.startswith("log"):
+                    if debug:
                         "Download log files and unzip"
                         sim_dir = simulations_dir / f"{simulation_id}-{simulation_name}"
                         sim_dir.mkdir(parents=True)
@@ -226,10 +230,12 @@ def download_results(
                             download.get_url,
                             Path(sim_dir, result.filename),
                         )
-                        with zipfile.ZipFile(
-                            sim_dir / f"log_files_sim_{simulation_id}.zip", "r"
-                        ) as zip:
-                            zip.extractall(sim_dir)
+                        if result.filename.startswith("log"):
+                            with zipfile.ZipFile(
+                                sim_dir / f"log_files_sim_{simulation_id}.zip", "r"
+                            ) as zip:
+                                zip.extractall(sim_dir)
+                print(f"Downloaded simulation {simulation_name}, ID {simulation_id}")
 
     printProgressBar(total, total, "Downloading result files")
 
@@ -240,7 +246,7 @@ def download_results(
         Path(results_dir, "gridadmin").with_suffix(".h5"),
     )
 
-    # Carshes feedback
+    # Crashes feedback
     if len(crashes) > 0:
         print(
             f"WARNING: {len(crashes)} simulations crashed, see crashed_simulations.json"
@@ -327,5 +333,58 @@ def process_results(
         )
 
 
+def extract_ids_from_directory(parent: str | Path) -> List[int]:
+    """
+    Given a directory containing subdirectories named in the format "{id}-{name}",
+    return a list of all extracted IDs.
+
+    Args:
+        parent: Path to the parent directory.
+
+    Returns:
+        A list of ID strings extracted from subdirectory names.
+    """
+    parent_path = Path(parent)
+    ids: List[int] = []
+
+    for sub in parent_path.iterdir():
+        if sub.is_dir():
+            parts = sub.name.split("-", 1)  # Split into at most 2 parts
+            if parts:  # Ensure something is there
+                ids.append(int(parts[0]))
+
+    return ids
+
+
 if __name__ == "__main__":
-    process_results()
+    # process_results()
+
+    from api_key import PERSONAL_API_KEY
+    config = {
+        "THREEDI_API_HOST": "https://api.3di.live",
+        "THREEDI_API_PERSONAL_API_TOKEN": PERSONAL_API_KEY,
+    }
+    # results_dir = Path(
+    #     "I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/debug_20260316"
+    # )
+    results_dir = Path(
+        "C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260317_2138"
+    )
+    (results_dir / "simulations").mkdir(parents=True, exist_ok=True)
+
+    downloaded_result_ids = extract_ids_from_directory(parent=results_dir/"simulations")
+    results_json = results_dir / "debug_20260317_2138.json"
+    with results_json.open("r") as f:
+        created_simulations = json.loads(f.read())
+        results_to_be_downloaded = [r for r in created_simulations["rain_event_simulations"] if r["id"] not in downloaded_result_ids]
+
+    with ThreediApi(config=config, version="v3-beta") as api:
+        download_results(
+            api,
+            results_to_be_downloaded,
+            results_dir,
+            created_simulations["threedimodel_id"],
+            debug=True,
+            wipe_results_dir=False,
+        )
+    print("Klaar")
