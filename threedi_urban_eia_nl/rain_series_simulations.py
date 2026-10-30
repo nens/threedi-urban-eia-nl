@@ -831,23 +831,26 @@ if __name__ == "__main__":
 
     # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/herberekening_time_step_1s")
     # results_json = "herberekening_time_step_1s.json"
-    # results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_rev7/debug_20260316_1633")
-    results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260320_1526")
+    # results_dir = Path("/mnt/results/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_bui08")
+    results_dir = Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/complexe_sturing/output_bui08")
+    # results_dir = Path("C:/Users/leendert.vanwolfswin/Documents/harderwijk/sturing via websockets/reeksberekening_outputs/debug_20260320_1526")
     results_dir.mkdir(parents=True, exist_ok=True)
-    results_json = "debug_20260317_1526.json"
+    results_json = "bui08_20261029.json"
 
     create_rain_series_simulations.callback(
-        threedimodel_id=76095,
-        saved_states_simulation_id=371329,
-        rain_files_dir=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/debugbui 190"),
+        threedimodel_id=86649,
+        saved_states_simulation_id=232412,
+        # rain_files_dir=Path("/mnt/results/Projecten_Z_2024/z0062_harderwijk/reeksberekening/bui08"),
+        rain_files_dir=Path("I:/Projecten_Z_2024/z0062_harderwijk/reeksberekening/bui08"),
         # rain_files_dir=Path(r"buien_1s"),
         # results_dir=Path(r"C:\Users\leendert.vanwolfswin\Documents\harderwijk\sturing via websockets\reeksberekening_outputs"),
         results_dir=results_dir,
         results_json=results_json,
         apikey=PERSONAL_API_KEY,
-        organisation="4178c71845f14a3babc1b042e7505193",
+        # organisation="4178c71845f14a3babc1b042e7505193",  # Nelen & Schuurmans Reeksberekening
+        organisation="61f5a464c35044c19bc7d4b42d7f58cb",  # Nelen & Schuurmans Consultancy,
         host="https://api.3di.live",
-        template_id=31106,
+        template_id=43107,
     )
 
     # show_status(results_dir / results_json)
